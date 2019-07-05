@@ -41,6 +41,8 @@ inline dim3 gridBlocks(const dim3 thrConfig, const int3 size)
 	);
 }
 
+namespace kernel {
+
 __device__
 inline int3 globalPos3d()
 {
@@ -94,6 +96,8 @@ inline double minusInfOrMin<double>()
 {
 	return -CUDART_INF;
 }
+
+} // namespace kernel
 
 } // namespace gpho
 
