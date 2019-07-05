@@ -321,7 +321,7 @@ template <class Ty>
 __host__
 inline HostVolume<Ty> makeHostVolume(int3 size)
 {
-	Ty *hostMem = new Ty[numel()];
+	Ty *hostMem = new Ty[prod(size)];
 	return HostVolume<Ty>(hostMem, size);
 }
 
