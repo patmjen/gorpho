@@ -32,6 +32,14 @@ public:
 		size_(size) {}
 
 	__host__
+	explicit Volume(const std::shared_ptr<Ty>& data, int nx, int ny, int nz) noexcept :
+		Volume(data, make_int3(nx, ny, nz)) {}
+
+	__host__
+	explicit Volume(std::shared_ptr<Ty>&& data, int nx, int ny, int nz) noexcept :
+		Volume(std::move(data), make_int3(nx, ny, nz)) {}
+
+	__host__
 	Volume(const Volume& other) noexcept :
 		data_(other.data_),
 		size_(other.size_) {}
@@ -138,7 +146,7 @@ template <class Ty> inline PinnedVolume<Ty> makePinnedVolume(int nx, int ny, int
 template <class Ty>
 class DeviceVolume : public Volume<Ty> {
 	// Since calling get() on the shared_ptr owned by the Volume class means we are calling a __host__ function,
-	// we need to keep a raw non-owning pointer around
+	// we need to keep a raw non-owning pointer around for device code
 	Ty *data_ptr_ = nullptr;
 
 public:
@@ -146,36 +154,39 @@ public:
 
 	__host__
 	explicit DeviceVolume(Ty *data, int3 size) noexcept :
-		Volume(std::shared_ptr<Ty>(data, cudaFree), size)
-	{
-		data_ptr_ = data;
-	}
+		DeviceVolume(std::shared_ptr<Ty>(data, cudaFree), size) {}
 
 	__host__
 	explicit DeviceVolume(Ty *data, int nx, int ny, int nz) noexcept :
-		Volume(std::shared_ptr<Ty>(data, cudaFree), make_int3(nx, ny, nz))
-	{
-		data_ptr_ = data;
-	}
+		DeviceVolume(data, make_int3(nx, ny, nz)) {}
 
 	__host__
 	explicit DeviceVolume(const std::shared_ptr<Ty>& data, int3 size) noexcept :
-		Volume(data, size)
-	{
-		data_ptr_ = data.get();
-	}
+		Volume(data, size),
+		data_ptr_(data.get()) {}
 
 	__host__
 	explicit DeviceVolume(const std::shared_ptr<Ty>& data, int nx, int ny, int nz) noexcept :
-		Volume(data, make_int3(nx, ny, nz))
+		DeviceVolume(data, make_int3(nx, ny, nz)) {}
+
+	__host__
+	explicit DeviceVolume(std::shared_ptr<Ty>&& data, int3 size) noexcept :
+		Volume(std::move(data), size)
 	{
-		data_ptr_ = data.get();
+		// We cannot initialize data_ptr_ directly, as we moved from the shared_ptr
+		// Make sure we call data function from base class, since it knows the actual pointer
+		data_ptr_ = Volume::data();
 	}
+
+	__host__
+	explicit DeviceVolume(std::shared_ptr<Ty>&& data, int nx, int ny, int nz) noexcept :
+		DeviceVolume(std::move(data), make_int3(nx, ny, nz)) {}
 
 	__host__ 
 	DeviceVolume(const DeviceVolume& other) :
 		Volume(other)
 	{
+		// We cannot initialize data_ptr_ directly, as other.data() returns a const pointer
 		// Make sure we call data function from base class, since it knows the actual pointer
 		data_ptr_ = Volume::data();
 	}
@@ -184,8 +195,10 @@ public:
 	DeviceVolume(DeviceVolume&& other) :
 		Volume(std::move(other))
 	{
+		// We cannot initialize data_ptr_ directly, as we moved from the shared_ptr
 		// Make sure we call data function from base class, since it knows the actual pointer
 		data_ptr_ = Volume::data();
+		other.data_ptr_ = nullptr;
 	}
 
 	__host__
@@ -202,8 +215,9 @@ public:
 	DeviceVolume& operator=(DeviceVolume&& rhs)
 	{
 		if (this != &rhs) {
-			data_ptr_ = rhs.data();
+			data_ptr_ = rhs.data_ptr;
 			Volume::operator=(std::move(rhs));
+			rhs.data_ptr = nullptr;
 		}
 		return *this;
 	}
@@ -278,13 +292,21 @@ public:
 
 	template <class Del>
 	__host__
-	explicit HostVolume(Ty *data, int3 size, Del deleter = std::default_delete<Ty[]>()) noexcept :
-		Volume(std::shared_ptr<Ty>(data, deleter), size) {}
+	explicit HostVolume(Ty *data, int3 size, Del deleter) noexcept :
+		HostVolume(std::shared_ptr<Ty>(data, deleter), size) {}
+
+	__host__
+	explicit HostVolume(Ty *data, int3 size) noexcept :
+		HostVolume(data, size, std::default_delete<Ty[]>()) {}
 
 	template <class Del>
 	__host__
-	explicit HostVolume(Ty *data, int nx, int ny, int nz, Del deleter = std::default_delete<Ty[]>()) noexcept :
-		Volume(std::shared_ptr<Ty>(data, deleter), make_int3(nx, ny, nz)) {}
+	explicit HostVolume(Ty *data, int nx, int ny, int nz, Del deleter) noexcept :
+		HostVolume(data, make_int3(nx, ny, nz), deleter) {}
+
+	__host__
+	explicit HostVolume(Ty *data, int nx, int ny, int nz) noexcept :
+		HostVolume(data, make_int3(nx, ny, nz), std::default_delete<Ty[]>()) {}
 
 	__host__
 	explicit HostVolume(const std::shared_ptr<Ty>& data, int3 size) noexcept :
@@ -292,7 +314,15 @@ public:
 
 	__host__
 	explicit HostVolume(const std::shared_ptr<Ty>& data, int nx, int ny, int nz) noexcept :
-		Volume(data, make_int3(nx, ny, nz)) {}
+		HostVolume(data, make_int3(nx, ny, nz)) {}
+
+	__host__
+	explicit HostVolume(std::shared_ptr<Ty>&& data, int3 size) noexcept :
+		Volume(std::move(data), size) {}
+
+	__host__
+	explicit HostVolume(std::shared_ptr<Ty>&& data, int nx, int ny, int nz) noexcept :
+		HostVolume(std::move(data), make_int3(nx, ny, nz)) {}
 
 	__host__
 	DeviceVolume<Ty> copyToDevice() const
@@ -339,11 +369,11 @@ public:
 
 	__host__
 	explicit PinnedVolume(Ty *data, int3 size) noexcept :
-		HostVolume(std::shared_ptr<Ty>(data, cudaFreeHost), size) {}
+		HostVolume(data, size, cudaFreeHost) {}
 
 	__host__
 	explicit PinnedVolume(Ty *data, int nx, int ny, int nz) noexcept :
-		HostVolume(std::shared_ptr<Ty>(data, cudaFreeHost), make_int3(nx, ny, nz)) {}
+		HostVolume(data, make_int3(nx, ny, nz), cudaFreeHost) {}
 
 	__host__
 	explicit PinnedVolume(const std::shared_ptr<Ty>& data, int3 size) noexcept :
@@ -351,7 +381,15 @@ public:
 
 	__host__
 	explicit PinnedVolume(const std::shared_ptr<Ty>& data, int nx, int ny, int nz) noexcept :
-		HostVolume(data, make_int3(nx, ny, nz)) {}
+		PinnedVolume(data, make_int3(nx, ny, nz)) {}
+
+	__host__
+	explicit PinnedVolume(std::shared_ptr<Ty>&& data, int3 size) noexcept :
+		HostVolume(std::move(data), size) {}
+
+	__host__
+	explicit PinnedVolume(std::shared_ptr<Ty>&& data, int nx, int ny, int nz) noexcept :
+		PinnedVolume(std::move(data), make_int3(nx, ny, nz)) {}
 };
 
 template <class Ty>
