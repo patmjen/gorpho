@@ -7,7 +7,6 @@
 
 namespace gpho {
 
-__host__
 template <class Ty> void nonDeleter(Ty *x) {};
 
 __host__ __device__
