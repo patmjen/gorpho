@@ -17,6 +17,8 @@ class Volume {
 	int3 size_ = make_int3(0, 0, 0);
 
 public:
+	using Type = Ty;
+
 	explicit Volume() = default;
 
 	__host__
