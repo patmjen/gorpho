@@ -8,99 +8,11 @@
 #include <string>
 
 #include "util.cuh"
+#include "view.cuh"
 
 namespace gpho {
 
-// TODO: Constructing any volume will incur a heap allocation which makes it expensive - fix this!
-
 namespace detail {
-
-class SizedBase {
-	int3 size_ = make_int3(0, 0, 0);
-
-public:
-	SizedBase() = default;
-
-	__host__ __device__
-	SizedBase(int3 size) :
-		size_(size) {}
-
-	__host__ __device__
-	SizedBase(const SizedBase& other) :
-		size_(other.size_) {}
-
-	__host__ __device__
-	SizedBase(SizedBase&& other) :
-		size_(other.size_)
-	{
-		other.size_ = make_int3(0, 0, 0);
-	}
-
-	__host__ __device__
-	SizedBase& operator=(const SizedBase& rhs)
-	{
-		if (this != &rhs) {
-			size_ = rhs.size_;
-		}
-		return *this;
-	}
-
-	__host__ __device__
-	SizedBase& operator=(SizedBase&& rhs)
-	{
-		if (this != &rhs) {
-			size_ = rhs.size_;
-			rhs.size_ = make_int3(0, 0, 0);
-		}
-		return *this;
-	}
-
-	__host__ __device__
-	const int3& size() const noexcept
-	{
-		return size_;
-	}
-
-	__host__ __device__
-	int numel() const noexcept
-	{
-		return prod(size_);
-	}
-
-	__host__ __device__
-	void reshape(const int3 newSize)
-	{
-		if (prod(newSize) != prod(size_)) {
-#ifdef __CUDA_ARCH__
-			// TODO: Maybe better to return an error state of some kind
-			// Device version
-			return;
-#else
-			// Host version
-			throw std::length_error("Reshape cannot alter number of elements");
-#endif
-		}
-		size_ = newSize;
-	}
-
-	__host__ __device__
-	void reshape(int nx, int ny, int nz)
-	{
-		reshape(make_int3(nx, ny, nz));
-	}
-
-	__host__ __device__
-	size_t idx(int3 pos) const noexcept
-	{
-		return gpho::idx(pos, size());
-	}
-
-	__host__ __device__
-	size_t idx(int x, int y, int z) const noexcept
-	{
-		return gpho::idx(x, y, z, size());
-	}
-};
 
 template <class Ty>
 class VolumeBase : public SizedBase {
