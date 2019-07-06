@@ -11,62 +11,44 @@
 
 namespace gpho {
 
-template <class Ty>
-class Volume {
-	std::shared_ptr<Ty> data_ = nullptr;
+// TODO: Constructing any volume will incur a heap allocation which makes it expensive - fix this!
+
+namespace detail {
+
+class SizedBase {
 	int3 size_ = make_int3(0, 0, 0);
 
 public:
-	using Type = Ty;
+	SizedBase() = default;
 
-	explicit Volume() = default;
-
-	__host__
-	explicit Volume(const std::shared_ptr<Ty>& data, int3 size) noexcept :
-		data_(data),
+	__host__ __device__
+	SizedBase(int3 size) :
 		size_(size) {}
 
-	__host__
-	explicit Volume(std::shared_ptr<Ty>&& data, int3 size) noexcept :
-		data_(std::move(data)),
-		size_(size) {}
-
-	__host__
-	explicit Volume(const std::shared_ptr<Ty>& data, int nx, int ny, int nz) noexcept :
-		Volume(data, make_int3(nx, ny, nz)) {}
-
-	__host__
-	explicit Volume(std::shared_ptr<Ty>&& data, int nx, int ny, int nz) noexcept :
-		Volume(std::move(data), make_int3(nx, ny, nz)) {}
-
-	__host__
-	Volume(const Volume& other) noexcept :
-		data_(other.data_),
+	__host__ __device__
+	SizedBase(const SizedBase& other) :
 		size_(other.size_) {}
 
-	__host__
-	Volume(Volume&& other) noexcept :
-		data_(std::move(other.data_)),
+	__host__ __device__
+	SizedBase(SizedBase&& other) :
 		size_(other.size_)
 	{
 		other.size_ = make_int3(0, 0, 0);
 	}
 
-	__host__
-	Volume& operator=(const Volume& rhs) noexcept
+	__host__ __device__
+	SizedBase& operator=(const SizedBase& rhs)
 	{
 		if (this != &rhs) {
-			data_ = rhs.data_;
 			size_ = rhs.size_;
 		}
 		return *this;
 	}
 
-	__host__
-	Volume& operator=(Volume&& rhs) noexcept
+	__host__ __device__
+	SizedBase& operator=(SizedBase&& rhs)
 	{
 		if (this != &rhs) {
-			data_ = std::move(rhs.data_);
 			size_ = rhs.size_;
 			rhs.size_ = make_int3(0, 0, 0);
 		}
@@ -107,18 +89,6 @@ public:
 		reshape(make_int3(nx, ny, nz));
 	}
 
-	__host__
-	Ty *data() noexcept
-	{
-		return data_.get();
-	}
-
-	__host__
-	const Ty *data() const noexcept
-	{
-		return data_.get();
-	}
-
 	__host__ __device__
 	size_t idx(int3 pos) const noexcept
 	{
@@ -132,6 +102,95 @@ public:
 	}
 };
 
+template <class Ty>
+class VolumeBase : public SizedBase {
+	std::shared_ptr<Ty> data_ = nullptr;
+
+public:
+	using Type = Ty;
+
+	explicit VolumeBase() = default;
+
+	__host__
+	VolumeBase(const VolumeBase& other) noexcept :
+		SizedBase(other),
+		data_(other.data_) {}
+
+	__host__
+	VolumeBase(VolumeBase&& other) noexcept :
+		SizedBase(std::move(other)),
+		data_(std::move(other.data_)) {}
+
+	__host__
+	VolumeBase& operator=(const VolumeBase& rhs) noexcept
+	{
+		if (this != &rhs) {
+			SizedBase::operator=(rhs);
+			data_ = rhs.data_;
+		}
+		return *this;
+	}
+
+	__host__
+	VolumeBase& operator=(VolumeBase&& rhs) noexcept
+	{
+		if (this != &rhs) {
+			SizedBase::operator=(std::move(rhs));
+			data_ = std::move(rhs.data_);
+		}
+		return *this;
+	}
+
+	__host__
+	long useCount() const noexcept
+	{
+		return data_.use_count();
+	}
+
+	__host__
+	Ty *data() noexcept
+	{
+		return data_.get();
+	}
+
+	__host__
+	const Ty *data() const noexcept
+	{
+		return data_.get();
+	}	
+
+protected:
+	__host__
+	explicit VolumeBase(const std::shared_ptr<Ty>& data, int3 size) noexcept :
+		SizedBase(size),
+		data_(data) {}
+
+	__host__
+	explicit VolumeBase(std::shared_ptr<Ty>&& data, int3 size) noexcept :
+		SizedBase(size),
+		data_(std::move(data)) {}
+
+	__host__
+	explicit VolumeBase(const std::shared_ptr<Ty>& data, int nx, int ny, int nz) noexcept :
+		VolumeBase(data, make_int3(nx, ny, nz)) {}
+
+	__host__
+	explicit VolumeBase(std::shared_ptr<Ty>&& data, int nx, int ny, int nz) noexcept :
+		VolumeBase(std::move(data), make_int3(nx, ny, nz)) {}
+
+	void copyTo_(VolumeBase<Ty>& dst, cudaMemcpyKind copyKind) const
+	{
+		cudaError_t res = cudaMemcpy(dst.data(), data(), numel() * sizeof(Ty), copyKind);
+		if (res != cudaSuccess) {
+			std::string msg = "Error while copying: ";
+			msg += cudaGetErrorString(res);
+			throw std::runtime_error(msg);
+		}
+	}
+};
+
+} // namespace detail
+
 // Forward decls
 template <class Ty> class DeviceVolume;
 template <class Ty> class HostVolume;
@@ -144,84 +203,52 @@ template <class Ty> inline PinnedVolume<Ty> makePinnedVolume(int3 size);
 template <class Ty> inline PinnedVolume<Ty> makePinnedVolume(int nx, int ny, int nz);
 
 template <class Ty>
-class DeviceVolume : public Volume<Ty> {
-	// Since calling get() on the shared_ptr owned by the Volume class means we are calling a __host__ function,
-	// we need to keep a raw non-owning pointer around for device code
-	Ty *data_ptr_ = nullptr;
-
+class DeviceVolume : public detail::VolumeBase<Ty> {
 public:
 	explicit DeviceVolume() = default;
 
 	__host__
 	explicit DeviceVolume(Ty *data, int3 size) noexcept :
-		DeviceVolume(std::shared_ptr<Ty>(data, cudaFree), size) {}
+		VolumeBase(std::shared_ptr<Ty>(data, cudaFree), size) {}
 
 	__host__
 	explicit DeviceVolume(Ty *data, int nx, int ny, int nz) noexcept :
 		DeviceVolume(data, make_int3(nx, ny, nz)) {}
 
-	__host__
-	explicit DeviceVolume(const std::shared_ptr<Ty>& data, int3 size) noexcept :
-		Volume(data, size),
-		data_ptr_(data.get()) {}
-
-	__host__
-	explicit DeviceVolume(const std::shared_ptr<Ty>& data, int nx, int ny, int nz) noexcept :
-		DeviceVolume(data, make_int3(nx, ny, nz)) {}
-
-	__host__
-	explicit DeviceVolume(std::shared_ptr<Ty>&& data, int3 size) noexcept :
-		Volume(std::move(data), size)
-	{
-		// We cannot initialize data_ptr_ directly, as we moved from the shared_ptr
-		// Make sure we call data function from base class, since it knows the actual pointer
-		data_ptr_ = Volume::data();
-	}
-
-	__host__
-	explicit DeviceVolume(std::shared_ptr<Ty>&& data, int nx, int ny, int nz) noexcept :
-		DeviceVolume(std::move(data), make_int3(nx, ny, nz)) {}
-
 	__host__ 
 	DeviceVolume(const DeviceVolume& other) :
-		Volume(other)
-	{
-		// We cannot initialize data_ptr_ directly, as other.data() returns a const pointer
-		// Make sure we call data function from base class, since it knows the actual pointer
-		data_ptr_ = Volume::data();
-	}
+		VolumeBase(other) {}
 
 	__host__
 	DeviceVolume(DeviceVolume&& other) :
-		Volume(std::move(other))
-	{
-		// We cannot initialize data_ptr_ directly, as we moved from the shared_ptr
-		// Make sure we call data function from base class, since it knows the actual pointer
-		data_ptr_ = Volume::data();
-		other.data_ptr_ = nullptr;
-	}
+		VolumeBase(std::move(other)) {}
 
 	__host__
-	DeviceVolume& operator=(const DeviceVolume& rhs)
+	DeviceVolume& operator=(const DeviceVolume& other)
 	{
-		if (this != &rhs) {
-			data_ptr_ = rhs.data();
-			Volume::operator=(rhs);
-		}
+		VolumeBase::operator=(other);
 		return *this;
 	}
 
 	__host__
-	DeviceVolume& operator=(DeviceVolume&& rhs)
+	DeviceVolume& operator=(DeviceVolume&& other)
 	{
-		if (this != &rhs) {
-			data_ptr_ = rhs.data_ptr;
-			Volume::operator=(std::move(rhs));
-			rhs.data_ptr = nullptr;
-		}
+		VolumeBase::operator=(std::move(other));
 		return *this;
 	}
 
+	///
+	/// Perform deep copy to new DeviceVolume.
+	__host__
+	DeviceVolume<Ty> copy() const
+	{
+		DeviceVolume<Ty> out = makeDeviceVolume(size());
+		copyTo_(out, cudaMemcpyDeviceToDevice);
+		return out;
+	}
+
+	///
+	/// Copy contents to new host volume.
 	__host__
 	HostVolume<Ty> copyToHost() const
 	{
@@ -230,6 +257,8 @@ public:
 		return out;
 	}
 
+	///
+	/// Copy contents to new pinned host volume.
 	__host__
 	PinnedVolume<Ty> copyToPinned() const
 	{
@@ -238,31 +267,16 @@ public:
 		return out;
 	}
 
+	///
+	/// Copy contents to supplied (pinned or not pinned) host volume. 
 	__host__
 	HostVolume<Ty>& copyToHost(HostVolume<Ty>& dst) const 
 	{
 		if (numel() != dst.numel()) {
 			throw std::length_error("Must copy to host volume with same number of elements");
 		}
-		cudaError_t res = cudaMemcpy(dst.data(), data(), numel() * sizeof(Ty), cudaMemcpyDeviceToHost);
-		if (res != cudaSuccess) {
-			std::string msg = "Error while copying to host: ";
-			msg += cudaGetErrorString(res);
-			throw std::runtime_error(msg);
-		}
+		copyTo_(dst, cudaMemcpyDeviceToHost);
 		return dst;
-	}
-
-	__host__ __device__
-	Ty *data() noexcept
-	{
-		return data_ptr_;
-	}
-
-	__host__ __device__
-	const Ty *data() const noexcept
-	{
-		return data_ptr_;
 	}
 };
 
@@ -286,14 +300,14 @@ inline DeviceVolume<Ty> makeDeviceVolume(int nx, int ny, int nz)
 }
 
 template <class Ty>
-class HostVolume : public Volume<Ty> {
+class HostVolume : public detail::VolumeBase<Ty> {
 public:
 	explicit HostVolume() = default;
 
 	template <class Del>
 	__host__
 	explicit HostVolume(Ty *data, int3 size, Del deleter) noexcept :
-		HostVolume(std::shared_ptr<Ty>(data, deleter), size) {}
+		VolumeBase(std::shared_ptr<Ty>(data, deleter), size) {}
 
 	__host__
 	explicit HostVolume(Ty *data, int3 size) noexcept :
@@ -306,23 +320,37 @@ public:
 
 	__host__
 	explicit HostVolume(Ty *data, int nx, int ny, int nz) noexcept :
-		HostVolume(data, make_int3(nx, ny, nz), std::default_delete<Ty[]>()) {}
+		HostVolume(data, nx, ny, nz, std::default_delete<Ty[]>()) {}
 
 	__host__
-	explicit HostVolume(const std::shared_ptr<Ty>& data, int3 size) noexcept :
-		Volume(data, size) {}
+	HostVolume(const HostVolume& other) :
+		VolumeBase(other) {}
 
 	__host__
-	explicit HostVolume(const std::shared_ptr<Ty>& data, int nx, int ny, int nz) noexcept :
-		HostVolume(data, make_int3(nx, ny, nz)) {}
+	HostVolume(HostVolume&& other) :
+		VolumeBase(std::move(other)) {}
 
 	__host__
-	explicit HostVolume(std::shared_ptr<Ty>&& data, int3 size) noexcept :
-		Volume(std::move(data), size) {}
+	HostVolume& operator=(const HostVolume& other)
+	{
+		VolumeBase::operator=(other);
+		return *this;
+	}
 
 	__host__
-	explicit HostVolume(std::shared_ptr<Ty>&& data, int nx, int ny, int nz) noexcept :
-		HostVolume(std::move(data), make_int3(nx, ny, nz)) {}
+	HostVolume& operator=(HostVolume&& other)
+	{
+		VolumeBase::operator=(std::move(other));
+		return *this;
+	}
+
+	__host__
+	HostVolume<Ty> copy() const
+	{
+		HostVolume<Ty> out = makeHostVolume(size());
+		copyTo_(out, cudaMemcpyHostToHost);
+		return out;
+	}
 
 	__host__
 	DeviceVolume<Ty> copyToDevice() const
@@ -337,12 +365,7 @@ public:
 		if (numel() != dst.numel()) {
 			throw std::length_error("Must copy to DeviceVolume with same number of elements");
 		}
-		cudaError_t res = cudaMemcpy(dst.data(), data(), numel() * sizeof(Ty), cudaMemcpyHostToDevice);
-		if (res != cudaSuccess) {
-			std::string msg = "Error while copying to device: ";
-			msg += cudaGetErrorString(res);
-			throw std::runtime_error(msg);
-		}
+		copyTo_(dst, cudaMemcpyHostToDevice);
 		return dst;
 	}
 };
@@ -373,23 +396,37 @@ public:
 
 	__host__
 	explicit PinnedVolume(Ty *data, int nx, int ny, int nz) noexcept :
-		HostVolume(data, make_int3(nx, ny, nz), cudaFreeHost) {}
+		PinnedVolume(data, make_int3(nx, ny, nz), cudaFreeHost) {}
 
 	__host__
-	explicit PinnedVolume(const std::shared_ptr<Ty>& data, int3 size) noexcept :
-		HostVolume(data, size) {}
+	PinnedVolume(const PinnedVolume& other) :
+		HostVolume(other) {}
 
 	__host__
-	explicit PinnedVolume(const std::shared_ptr<Ty>& data, int nx, int ny, int nz) noexcept :
-		PinnedVolume(data, make_int3(nx, ny, nz)) {}
+	PinnedVolume(PinnedVolume&& other) :
+		HostVolume(std::move(other)) {}
 
 	__host__
-	explicit PinnedVolume(std::shared_ptr<Ty>&& data, int3 size) noexcept :
-		HostVolume(std::move(data), size) {}
+	PinnedVolume& operator=(const PinnedVolume& other)
+	{
+		HostVolume::operator=(other);
+		return *this;
+	}
 
 	__host__
-	explicit PinnedVolume(std::shared_ptr<Ty>&& data, int nx, int ny, int nz) noexcept :
-		PinnedVolume(std::move(data), make_int3(nx, ny, nz)) {}
+	PinnedVolume& operator=(PinnedVolume&& other)
+	{
+		HostVolume::operator=(std::move(other));
+		return *this;
+	}
+
+	__host__
+	PinnedVolume<Ty> copy() const
+	{
+		PinnedVolume<Ty> out = makePinnedVolume(size());
+		copyTo_(out, cudaMemcpyHostToHost);
+		return out;
+	}
 };
 
 template <class Ty>
