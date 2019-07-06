@@ -148,6 +148,7 @@ template <class Ty>
 class DeviceView : public detail::ViewBase<Ty> {
 public:
 	using detail::ViewBase<Ty>::ViewBase; // Inherit constructors
+	DeviceView() = default;
 	DeviceView(const DeviceView&) = default;
 	DeviceView& operator=(const DeviceView&) = default;
 };
@@ -156,6 +157,7 @@ template <class Ty>
 class HostView : public detail::ViewBase<Ty> {
 public:
 	using detail::ViewBase<Ty>::ViewBase; // Inherit constructors
+	HostView() = default;
 	HostView(const HostView&) = default;
 	HostView& operator=(const HostView&) = default;
 };
@@ -164,6 +166,7 @@ template <class Ty>
 class PinnedView : public detail::ViewBase<Ty> {
 public:
 	using detail::ViewBase<Ty>::ViewBase; // Inherit constructors
+	PinnedView() = default;
 	PinnedView(const PinnedView&) = default;
 	PinnedView& operator=(const PinnedView&) = default;
 };
