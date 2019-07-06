@@ -100,6 +100,7 @@ class ViewBase : public SizedBase {
 
 public:
 	using Type = Ty;
+	using ConstView = ViewBase<const std::remove_const<Ty>::type>;
 
 	explicit ViewBase() = default;
 
@@ -147,6 +148,8 @@ public:
 template <class Ty>
 class DeviceView : public detail::ViewBase<Ty> {
 public:
+	using ConstView = DeviceView<const std::remove_const<Ty>::type>;
+
 	using detail::ViewBase<Ty>::ViewBase; // Inherit constructors
 	DeviceView() = default;
 	DeviceView(const DeviceView&) = default;
@@ -156,6 +159,8 @@ public:
 template <class Ty>
 class HostView : public detail::ViewBase<Ty> {
 public:
+	using ConstView = HostView<const std::remove_const<Ty>::type>;
+
 	using detail::ViewBase<Ty>::ViewBase; // Inherit constructors
 	HostView() = default;
 	HostView(const HostView&) = default;
@@ -165,6 +170,8 @@ public:
 template <class Ty>
 class PinnedView : public detail::ViewBase<Ty> {
 public:
+	using ConstView = PinnedView<const std::remove_const<Ty>::type>;
+
 	using detail::ViewBase<Ty>::ViewBase; // Inherit constructors
 	PinnedView() = default;
 	PinnedView(const PinnedView&) = default;
