@@ -114,6 +114,26 @@ template <class Ty> inline HostVolume<Ty> makeHostVolume(int nx, int ny, int nz)
 template <class Ty> inline PinnedVolume<Ty> makePinnedVolume(int3 size);
 template <class Ty> inline PinnedVolume<Ty> makePinnedVolume(int nx, int ny, int nz);
 
+// We need this ugly enable_if soup (I think!), as C++ does not allow us to overload on return type.
+
+template <class Vol>
+std::enable_if<std::is_same<Vol, DeviceVolume<typename Vol::Type>>::value, Vol>::type makeVolume(int3 size)
+{
+	return makeDeviceVolume<typename Vol::Type>(size);
+}
+
+template <class Vol>
+std::enable_if<std::is_same<Vol, HostVolume<typename Vol::Type>>::value, Vol>::type makeVolume(int3 size)
+{
+	return makeHostVolume<typename Vol::Type>(size);
+}
+
+template <class Vol>
+std::enable_if<std::is_same<Vol, PinnedVolume<typename Vol::Type>>::value, Vol>::type makeVolume(int3 size)
+{
+	return makePinnedVolume<typename Vol::Type>(size);
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Device
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
