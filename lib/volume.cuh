@@ -141,6 +141,9 @@ std::enable_if<std::is_same<Vol, PinnedVolume<typename Vol::Type>>::value, Vol>:
 template <class Ty>
 class DeviceVolume : public detail::VolumeBase<Ty> {
 public:
+	using View = DeviceView<Ty>;
+	using ConstView = DeviceView<Ty>::ConstView;
+
 	explicit DeviceVolume() = default;
 
 	__host__
@@ -214,6 +217,20 @@ public:
 		copyTo_(dst, cudaMemcpyDeviceToHost);
 		return dst;
 	}
+
+	///
+	/// Return view of device volume
+	View view() noexcept
+	{
+		return View(data(), size());
+	}
+
+	///
+	/// Return const view of device volume
+	ConstView view() const noexcept
+	{
+		return ConstView(data(), size());
+	}
 };
 
 template <class Ty>
@@ -242,6 +259,9 @@ inline DeviceVolume<Ty> makeDeviceVolume(int nx, int ny, int nz)
 template <class Ty>
 class HostVolume : public detail::VolumeBase<Ty> {
 public:
+	using View = HostView<Ty>;
+	using ConstView = HostView<Ty>::ConstView;
+
 	explicit HostVolume() = default;
 
 	template <class Del>
@@ -308,6 +328,20 @@ public:
 		copyTo_(dst, cudaMemcpyHostToDevice);
 		return dst;
 	}
+
+	///
+	/// Return view of host volume
+	View view() noexcept
+	{
+		return View(data(), size());
+	}
+
+	///
+	/// Return const view of host volume
+	ConstView view() const noexcept
+	{
+		return ConstView(data(), size());
+	}
 };
 
 template <class Ty>
@@ -332,6 +366,9 @@ inline HostVolume<Ty> makeHostVolume(int nx, int ny, int nz)
 template <class Ty>
 class PinnedVolume : public HostVolume<Ty> {
 public:
+	using View = PinnedView<Ty>;
+	using ConstView = PinnedView<Ty>::ConstView;
+
 	explicit PinnedVolume() = default;
 
 	__host__
@@ -370,6 +407,20 @@ public:
 		PinnedVolume<Ty> out = makePinnedVolume(size());
 		copyTo_(out, cudaMemcpyHostToHost);
 		return out;
+	}
+
+	///
+	/// Return view of pinned volume
+	View view() noexcept
+	{
+		return View(data(), size());
+	}
+
+	///
+	/// Return const view of pinned volume
+	ConstView view() const noexcept
+	{
+		return ConstView(data(), size());
 	}
 };
 
