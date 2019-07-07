@@ -143,6 +143,22 @@ public:
 	}
 };
 
+template <class DstTy, class SrcTy>
+void cudaCopy(ViewBase<DstTy>& dst, const ViewBase<SrcTy>& src, cudaMemcpyKind copyKind)
+{
+	static_assert(std::is_same<typename std::remove_cv<DstTy>::type, typename std::remove_cv<SrcTy>::type>::value,
+		"Underlying type for views must be the same");
+	if (dst.numel() != src.numel()) {
+		throw std::length_error("Source and destination must have same number of elements");
+	}
+	cudaError_t res = cudaMemcpy(dst.data(), src.data(), dst.numel() * sizeof(DstTy), copyKind);
+	if (res != cudaSuccess) {
+		std::string msg = "Error while copying: ";
+		msg += cudaGetErrorString(res);
+		throw std::runtime_error(msg);
+	}
+}
+
 } // namespace detail
 
 template <class Ty>
@@ -177,6 +193,30 @@ public:
 	PinnedView(const PinnedView&) = default;
 	PinnedView& operator=(const PinnedView&) = default;
 };
+
+template <class DstTy, class SrcTy>
+void transfer(DeviceView<DstTy>& dst, const HostView<SrcTy>& src)
+{
+	detail::cudaCopy(dst, src, cudaMemcpyHostToDevice);
+}
+
+template <class DstTy, class SrcTy>
+void transfer(HostView<DstTy>& dst, const DeviceView<SrcTy>& src)
+{
+	detail::cudaCopy(dst, src, cudaMemcpyDeviceToHost);
+}
+
+template <class DstTy, class SrcTy>
+void copy(HostView<DstTy>& dst, const HostView<SrcTy>& src)
+{
+	detail::cudaCopy(dst, src, cudaMemcpyHostToHost);
+}
+
+template <class DstTy, class SrcTy>
+void copy(DeviceView<DstTy>& dst, const DeviceView<SrcTy>& src)
+{
+	detail::cudaCopy(dst, src, cudaMemcpyDeviceToDevice);
+}
 
 } // namespace gpho
 

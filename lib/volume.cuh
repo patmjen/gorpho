@@ -89,16 +89,6 @@ protected:
 	__host__
 	explicit VolumeBase(std::shared_ptr<Ty>&& data, int nx, int ny, int nz) noexcept :
 		VolumeBase(std::move(data), make_int3(nx, ny, nz)) {}
-
-	void copyTo_(VolumeBase<Ty>& dst, cudaMemcpyKind copyKind) const
-	{
-		cudaError_t res = cudaMemcpy(dst.data(), data(), numel() * sizeof(Ty), copyKind);
-		if (res != cudaSuccess) {
-			std::string msg = "Error while copying: ";
-			msg += cudaGetErrorString(res);
-			throw std::runtime_error(msg);
-		}
-	}
 };
 
 } // namespace detail
@@ -181,8 +171,8 @@ public:
 	__host__
 	DeviceVolume<Ty> copy() const
 	{
-		DeviceVolume<Ty> out = makeDeviceVolume(size());
-		copyTo_(out, cudaMemcpyDeviceToDevice);
+		DeviceVolume<Ty> out = makeDeviceVolume<Ty>(size());
+		gpho::copy<Ty>(out.view(), view());
 		return out;
 	}
 
@@ -214,7 +204,7 @@ public:
 		if (numel() != dst.numel()) {
 			throw std::length_error("Must copy to host volume with same number of elements");
 		}
-		copyTo_(dst, cudaMemcpyDeviceToHost);
+		transfer<Ty>(dst.view(), view());
 		return dst;
 	}
 
@@ -308,7 +298,7 @@ public:
 	HostVolume<Ty> copy() const
 	{
 		HostVolume<Ty> out = makeHostVolume(size());
-		copyTo_(out, cudaMemcpyHostToHost);
+		gpho::copy<Ty>(out.view(), view());
 		return out;
 	}
 
@@ -325,7 +315,7 @@ public:
 		if (numel() != dst.numel()) {
 			throw std::length_error("Must copy to DeviceVolume with same number of elements");
 		}
-		copyTo_(dst, cudaMemcpyHostToDevice);
+		transfer<Ty>(dst.view(), view());
 		return dst;
 	}
 
