@@ -221,6 +221,20 @@ public:
 	{
 		return ConstView(data(), size());
 	}
+
+	///
+	/// Convert to view of device volume
+	operator View()
+	{
+		return view();
+	}
+
+	///
+	/// Convert to const view of device volume 
+	operator ConstView() const
+	{
+		return view();
+	}
 };
 
 template <class Ty>
@@ -332,6 +346,20 @@ public:
 	{
 		return ConstView(data(), size());
 	}
+
+	///
+	/// Convert to view of host volume
+	operator View()
+	{
+		return view();
+	}
+
+	///
+	/// Convert to const view of host volume 
+	operator ConstView() const
+	{
+		return view();
+	}
 };
 
 template <class Ty>
@@ -411,6 +439,20 @@ public:
 	ConstView view() const noexcept
 	{
 		return ConstView(data(), size());
+	}
+
+	///
+	/// Convert to view of pinned volume
+	operator View()
+	{
+		return view();
+	}
+
+	///
+	/// Convert to const view of pinned volume 
+	operator ConstView() const
+	{
+		return view();
 	}
 };
 

@@ -217,3 +217,23 @@ TYPED_TEST(AllDerivedVolumesTest, GetView)
 	auto cvw = constRef.view();
 	::testing::StaticAssertTypeEq<decltype(cvw)::Type, const Type>();
 }
+
+TYPED_TEST(AllDerivedVolumesTest, ViewConversion)
+{
+	using Volume = typename TestFixture::Volume;
+	using Type = typename Volume::Type;
+	using View = typename Volume::View;
+	using ConstView = typename Volume::ConstView;
+
+	Volume vol;
+	ASSERT_NO_THROW(vol = makeVolume<Volume>(int3_1));
+	View vw = vol;
+
+	EXPECT_EQ(vw.data(), vol.data());
+	EXPECT_EQ(vw.size(), vol.size());
+
+	// Make sure a const reference returns a const view
+	const Volume& constRef = vol;
+	ConstView cvw = constRef.view();
+	::testing::StaticAssertTypeEq<decltype(cvw)::Type, const Type>();
+}
