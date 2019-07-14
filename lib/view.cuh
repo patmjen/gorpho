@@ -114,9 +114,9 @@ public:
 		SizedBase(other),
 		data_(other.data_) {}
 
-	template <class V>
+	template <class Ty2>
 	__host__ __device__
-	ViewBase(const V& other) noexcept :
+	ViewBase(const ViewBase<Ty2>& other) noexcept :
 		SizedBase(other),
 		data_(other.data()) {}
 
