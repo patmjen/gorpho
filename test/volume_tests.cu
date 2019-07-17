@@ -237,3 +237,24 @@ TYPED_TEST(AllDerivedVolumesTest, ViewConversion)
 	ConstView cvw = constRef.view();
 	::testing::StaticAssertTypeEq<decltype(cvw)::Type, const Type>();
 }
+
+TYPED_TEST(AllDerivedVolumesTest, Comparison)
+{
+	using Volume = typename TestFixture::Volume;
+	int3 size1 = make_int3(2, 1, 3);
+	int3 size2 = make_int3(4, 3, 1);
+
+	Volume vol1, vol2, vol3, vol4, vol5;
+	ASSERT_NO_THROW(vol1 = makeVolume<Volume>(size1));
+	ASSERT_NO_THROW(vol3 = makeVolume<Volume>(size1));
+	ASSERT_NO_THROW(vol4 = makeVolume<Volume>(size2));
+	vol2 = vol1;
+
+	EXPECT_EQ(vol1, vol1);
+	EXPECT_EQ(vol1, vol2);
+	EXPECT_NE(vol1, vol3);
+	EXPECT_NE(vol1, vol4);
+	vol2.reshape(1, 2, 3);
+	ASSERT_NE(vol2.size(), vol1.size());
+	EXPECT_NE(vol1, vol2);
+}

@@ -1,6 +1,7 @@
 #ifndef VIEW_CUH__
 #define VIEW_CUH__
 
+#include "helper_math.cuh"
 #include "util.cuh"
 
 namespace gpho {
@@ -45,6 +46,18 @@ public:
 			rhs.size_ = make_int3(0, 0, 0);
 		}
 		return *this;
+	}
+
+	__host__ __device__
+	bool operator==(const SizedBase& rhs) const noexcept
+	{
+		return size_ == rhs.size_;
+	}
+
+	__host__ __device__
+	bool operator!=(const SizedBase& rhs) const noexcept
+	{
+		return !(*this == rhs);
 	}
 
 	__host__ __device__
@@ -128,6 +141,18 @@ public:
 			data_ = rhs.data_;
 		}
 		return *this;
+	}
+
+	__host__ __device__
+	bool operator==(const ViewBase& rhs) const noexcept
+	{
+		return SizedBase::operator==(rhs) && data_ == rhs.data_;
+	}
+
+	__host__ __device__
+	bool operator!=(const ViewBase& rhs) const noexcept
+	{
+		return !(*this == rhs);
 	}
 
 	__host__ __device__

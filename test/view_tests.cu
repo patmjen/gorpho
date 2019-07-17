@@ -54,6 +54,21 @@ TEST(SizedBaseTest, Idx)
 	EXPECT_EQ(sb.idx(1, 2, 4), idx(1, 2, 4, sb.size()));
 }
 
+TEST(SizedBaseTest, Comparison)
+{
+	int3 size1 = make_int3(2, 3, 5);
+	int3 size2 = make_int3(7, 1, 8);
+	SizedBase sb1(size1);
+	SizedBase sb2(size1);
+	SizedBase sb3(size2);
+	ASSERT_EQ(sb1.size(), sb2.size()) << "Test pre-condition";
+	ASSERT_NE(sb1.size(), sb3.size()) << "Test pre-condition";
+
+	EXPECT_EQ(sb1, sb1);
+	EXPECT_EQ(sb1, sb2);
+	EXPECT_NE(sb1, sb3);
+}
+
 template <class Vw>
 class AllViewsTest : public ::testing::Test {
 public:
@@ -105,4 +120,23 @@ TYPED_TEST(AllViewsTest, NonConstToConstView)
 	EXPECT_EQ(vw2.size(), vw2.size());
 	EXPECT_EQ(*vw1.data(), x);
 	EXPECT_EQ(*vw2.data(), x);
+}
+
+TYPED_TEST(AllViewsTest, Comparison)
+{
+	int3 size1 = make_int3(2, 3, 5);
+	int3 size2 = make_int3(7, 1, 8);
+	float x1 = 1.2f;
+	float x2 = 3.1f;
+	typename TestFixture::View vw1(&x1, size1);
+	typename TestFixture::View vw2(&x1, size1);
+	typename TestFixture::View vw3(&x1, size2);
+	typename TestFixture::View vw4(&x2, size1);
+	typename TestFixture::View vw5(&x2, size2);
+
+	EXPECT_EQ(vw1, vw1);
+	EXPECT_EQ(vw1, vw2);
+	EXPECT_NE(vw1, vw3);
+	EXPECT_NE(vw1, vw4);
+	EXPECT_NE(vw1, vw5);
 }

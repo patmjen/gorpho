@@ -54,6 +54,18 @@ public:
 	}
 
 	__host__
+	bool operator==(const VolumeBase& rhs) const noexcept
+	{
+		return SizedBase::operator==(rhs) && data_ == rhs.data_;
+	}
+
+	__host__
+	bool operator!=(const VolumeBase& rhs) const noexcept
+	{
+		return !(*this == rhs);
+	}
+
+	__host__
 	long useCount() const noexcept
 	{
 		return data_.use_count();
