@@ -89,11 +89,16 @@ TYPED_TEST(AllViewsTest, DefaultInit)
 TYPED_TEST(AllViewsTest, PtrConstructor)
 {
 	float x = 1.4f;
-	int3 size = int3_1;
-	typename TestFixture::View vw(&x, size);
-	EXPECT_EQ(vw.data(), &x);
-	EXPECT_EQ(*vw.data(), x);
-	EXPECT_EQ(vw.size(), size);
+	int3 size = make_int3(3, 1, 2);
+	typename TestFixture::View vw1(&x, size);
+	EXPECT_EQ(vw1.data(), &x);
+	EXPECT_EQ(*vw1.data(), x);
+	EXPECT_EQ(vw1.size(), size);
+
+	typename TestFixture::View vw2(&x, size.x, size.y, size.z);
+	EXPECT_EQ(vw2.data(), &x);
+	EXPECT_EQ(*vw2.data(), x);
+	EXPECT_EQ(vw2.size(), size);
 }
 
 TYPED_TEST(AllViewsTest, ModifyValue)

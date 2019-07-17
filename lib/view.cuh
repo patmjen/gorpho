@@ -125,6 +125,10 @@ public:
 		data_(data) {}
 
 	__host__ __device__
+	explicit ViewBase(Ty *data, int nx, int ny, int nz) noexcept :
+		ViewBase(data, make_int3(nx, ny, nz)) {}
+
+	__host__ __device__
 	ViewBase(const ViewBase& other) noexcept :
 		SizedBase(other),
 		data_(other.data_) {}
