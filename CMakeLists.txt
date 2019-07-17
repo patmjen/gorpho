@@ -30,6 +30,7 @@ enable_language (CUDA)
 project ("gorpho" "CUDA")
 
 include_directories ("lib")
+include_directories ("lib/cudablockproc")
 include_directories (${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
 enable_testing ()
