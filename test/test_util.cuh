@@ -16,20 +16,6 @@
 const int3 int3_0 = make_int3(0, 0, 0);
 const int3 int3_1 = make_int3(1, 1, 1);
 
-template <class Ty>
-__global__ void setDevicePtrKernel(Ty *ptr, Ty val)
-{
-	*ptr = val;
-}
-
-template <class Ty>
-void setDevicePtr(Ty *ptr, Ty val)
-{
-	// TODO: Find way to forcefully propagate error state
-	setDevicePtrKernel<Ty><<<1, 1 >>>(ptr, val);
-	ASSERT_CUDA_SUCCESS(cudaDeviceSynchronize());
-}
-
 #define EXPECT_CUDA_EQ(expected, actual) \
     EXPECT_PRED_FORMAT2([=](auto e1, auto e2, auto a1, auto a2) \
         { return assertDevicePtrEqual(e1, e2, a1, a2); }, expected, actual)
@@ -68,5 +54,54 @@ template <class Ty>
 	out << "Expected value:\n  " << exprExpected << "\nwhich was:\n  " << expected;
 	return out;
 }
+
+
+template <class Ty>
+__global__ void setDevicePtrKernel(Ty *ptr, Ty val)
+{
+	*ptr = val;
+}
+
+class CudaTest : public ::testing::Test {
+public:
+	static void TearDownTestCase()
+	{
+		cudaDeviceReset();
+	}
+
+protected:
+	void SetUp() override
+	{
+		cudaDeviceReset();
+	}
+
+	template <class Ty>
+	void setDevicePtr(Ty *ptr, Ty val)
+	{
+		// TODO: Find way to forcefully propagate error state
+		setDevicePtrKernel<Ty><<<1, 1>>>(ptr, val);
+		syncAndAssertCudaSuccess();
+	}
+
+	void assertCudaSuccess() const
+	{
+		ASSERT_CUDA_SUCCESS(cudaPeekAtLastError());
+	}
+
+	void syncAndAssertCudaSuccess() const
+	{
+		ASSERT_CUDA_SUCCESS(cudaDeviceSynchronize());
+	}
+
+	void expectCudaSuccess() const
+	{
+		EXPECT_CUDA_SUCCESS(cudaPeekAtLastError());
+	}
+
+	void syncAndExpectCudaSuccess() const
+	{
+		EXPECT_CUDA_SUCCESS(cudaDeviceSynchronize());
+	}
+};
 
 #endif // TEST_UTIL_CUH__

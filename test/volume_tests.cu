@@ -18,6 +18,9 @@ public:
 	using Volume = Vol;
 };
 
+class DeviceVolumeTest : public CudaTest {};
+class PinnedVolumeTest : public CudaTest {};
+
 // TODO: Also parameterize on the type contained in the volumes
 using AllVolumeTypes = ::testing::Types<VolumeBase<float>, DeviceVolume<float>, HostVolume<float>, PinnedVolume<float>>;
 TYPED_TEST_SUITE(AllVolumesTest, AllVolumeTypes);
@@ -60,12 +63,12 @@ void performCopyTest(const Vol& vol)
 	EXPECT_EQ(vol.useCount(), 1) << "Assignment post-condition";
 }
 
-TEST(DeviceVolumeTest, Copy)
+TEST_F(DeviceVolumeTest, Copy)
 {
 	DeviceVolume<float> vol;
 	ASSERT_NO_THROW(vol = makeDeviceVolume<float>(1, 1, 1));
 	performCopyTest<DeviceVolume<float>>(vol);
-	ASSERT_CUDA_SUCCESS(cudaGetLastError());
+	assertCudaSuccess();
 }
 
 TEST(HostVolumeTest, Copy)
@@ -75,12 +78,12 @@ TEST(HostVolumeTest, Copy)
 	performCopyTest<HostVolume<float>>(vol);
 }
 
-TEST(PinnedVolumeTest, Copy)
+TEST_F(PinnedVolumeTest, Copy)
 {
 	PinnedVolume<float> vol;
 	ASSERT_NO_THROW(vol = makePinnedVolume<float>(1, 1, 1));
 	performCopyTest<PinnedVolume<float>>(vol);
-	ASSERT_CUDA_SUCCESS(cudaGetLastError());
+	assertCudaSuccess();
 }
 
 template <class Vol, class Ty>
@@ -107,12 +110,12 @@ void performMoveConstructionTest(Vol vol)
 	EXPECT_EQ(vol.useCount(), 0);
 }
 
-TEST(DeviceVolumeTest, MoveConstruction)
+TEST_F(DeviceVolumeTest, MoveConstruction)
 {
 	DeviceVolume<float> vol;
 	ASSERT_NO_THROW(vol = makeDeviceVolume<float>(1, 1, 1));
 	performMoveConstructionTest<DeviceVolume<float>>(vol);
-	ASSERT_CUDA_SUCCESS(cudaGetLastError());
+	assertCudaSuccess();
 }
 
 TEST(HostVolumeTest, MoveConstruction)
@@ -122,12 +125,12 @@ TEST(HostVolumeTest, MoveConstruction)
 	performMoveConstructionTest<HostVolume<float>>(vol);
 }
 
-TEST(PinnedVolumeTest, MoveConstruction)
+TEST_F(PinnedVolumeTest, MoveConstruction)
 {
 	PinnedVolume<float> vol;
 	ASSERT_NO_THROW(vol = makePinnedVolume<float>(1, 1, 1));
 	performMoveConstructionTest<PinnedVolume<float>>(vol);
-	ASSERT_CUDA_SUCCESS(cudaGetLastError());
+	assertCudaSuccess();
 }
 
 template <class Vol>
@@ -144,12 +147,12 @@ void performMoveAssignmentTest(Vol vol)
 	EXPECT_EQ(vol.useCount(), 0);
 }
 
-TEST(DeviceVolumeTest, MoveAssignment)
+TEST_F(DeviceVolumeTest, MoveAssignment)
 {
 	DeviceVolume<float> vol;
 	ASSERT_NO_THROW(vol = makeDeviceVolume<float>(1, 1, 1));
 	performMoveAssignmentTest<DeviceVolume<float>>(vol);
-	ASSERT_CUDA_SUCCESS(cudaGetLastError());
+	assertCudaSuccess();
 }
 
 TEST(HostVolumeTest, MoveAssignment)
@@ -159,15 +162,15 @@ TEST(HostVolumeTest, MoveAssignment)
 	performMoveAssignmentTest<HostVolume<float>>(vol);
 }
 
-TEST(PinnedVolumeTest, MoveAssignment)
+TEST_F(PinnedVolumeTest, MoveAssignment)
 {
 	PinnedVolume<float> vol;
 	ASSERT_NO_THROW(vol = makePinnedVolume<float>(1, 1, 1));
 	performMoveAssignmentTest<PinnedVolume<float>>(vol);
-	ASSERT_CUDA_SUCCESS(cudaGetLastError());
+	assertCudaSuccess();
 }
 
-TEST(DeviceVolumeTest, HostTransfer)
+TEST_F(DeviceVolumeTest, HostTransfer)
 {
 	float expected = 2.3f;
 	DeviceVolume<float> dvol = makeDeviceVolume<float>(1, 1, 1);
@@ -198,6 +201,7 @@ public:
 };
 
 // TODO: Also parameterize on the type contained in the volumes
+// TODO: Maybe need to inherit from CudaTest or find way to mock memory allocations
 using AllDerivedVolumeTypes = ::testing::Types<DeviceVolume<float>, HostVolume<float>, PinnedVolume<float>>;
 TYPED_TEST_SUITE(AllDerivedVolumesTest, AllDerivedVolumeTypes);
 
