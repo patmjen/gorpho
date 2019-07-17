@@ -1,6 +1,8 @@
 #ifndef VIEW_CUH__
 #define VIEW_CUH__
 
+#include <cuda_runtime.h>
+
 #include "helper_math.cuh"
 #include "util.cuh"
 

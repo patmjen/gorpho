@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <cuda_runtime.h>
+#include <device_launch_parameters.h>
 #include <math_constants.h>
 
 namespace gpho {

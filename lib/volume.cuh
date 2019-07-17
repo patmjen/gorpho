@@ -6,6 +6,7 @@
 #include <new>
 #include <stdexcept>
 #include <string>
+#include <cuda_runtime.h>
 
 #include "util.cuh"
 #include "view.cuh"

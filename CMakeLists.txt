@@ -25,9 +25,12 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
                  ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
                  EXCLUDE_FROM_ALL)
 
+enable_language (CUDA)
+
 project ("gorpho" "CUDA")
 
 include_directories ("lib")
+include_directories (${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
 enable_testing ()
 add_subdirectory ("test")

@@ -1,6 +1,8 @@
 #ifndef TEST_UTIL_CUH__
 #define TEST_UTIL_CUH__
 
+#include <cuda_runtime.h>
+
 #define ASSERT_CUDA_SUCCESS(expr) do { \
 	cudaError_t res__ = (expr); \
 	ASSERT_EQ(res__, cudaSuccess) << "CUDA error: " << cudaGetErrorString(res__); \
