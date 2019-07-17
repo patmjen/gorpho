@@ -223,6 +223,13 @@ public:
 	}
 
 	///
+	/// Return const view of device volume
+	ConstView constView() const noexcept
+	{
+		return ConstView(data(), size());
+	}
+
+	///
 	/// Convert to view of device volume
 	operator View()
 	{
@@ -348,6 +355,13 @@ public:
 	}
 
 	///
+	/// Return const view of device volume
+	ConstView constView() const noexcept
+	{
+		return ConstView(data(), size());
+	}
+
+	///
 	/// Convert to view of host volume
 	operator View()
 	{
@@ -437,6 +451,13 @@ public:
 	///
 	/// Return const view of pinned volume
 	ConstView view() const noexcept
+	{
+		return ConstView(data(), size());
+	}
+
+	///
+	/// Return const view of device volume
+	ConstView constView() const noexcept
 	{
 		return ConstView(data(), size());
 	}
