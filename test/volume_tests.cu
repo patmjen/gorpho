@@ -194,6 +194,27 @@ TEST(HostVolumeTest, DeviceTransfer)
 	EXPECT_CUDA_EQ(dvol.data(), expected);
 }
 
+TEST(HostVolumeTest, Indexing)
+{
+	int3 size = make_int3(2, 3, 4);
+	HostVolume<float> vol;
+	ASSERT_NO_THROW(vol = makeHostVolume<float>(size));
+	for (int i = 0; i < prod(size); ++i) {
+		vol.data()[i] = i;
+	}
+
+	for (int i = 0; i < vol.numel(); ++i) {
+		EXPECT_EQ(vol[i], i);
+	}
+	for (int x = 0; x < vol.size().x; ++x) {
+		for (int y = 0; y < vol.size().y; ++y) {
+			for (int z = 0; z < vol.size().z; ++z) {
+				EXPECT_EQ(vol[make_int3(x, y, z)], vol.idx(x, y, z));
+			}
+		}
+	}
+}
+
 template <class Vol>
 class AllDerivedVolumesTest : public ::testing::Test {
 public:

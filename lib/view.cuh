@@ -172,6 +172,30 @@ public:
 	{
 		return data_;
 	}
+
+	__host__ __device__
+	Ty& operator[](size_t idx)
+	{
+		return data_[idx];
+	}
+
+	__host__ __device__
+	const Ty& operator[](size_t idx) const
+	{
+		return data_[idx];
+	}
+
+	__host__ __device__
+	Ty& operator[](int3 idx3)
+	{
+		return data_[idx(idx3)];
+	}
+
+	__host__ __device__
+	const Ty& operator[](int3 idx3) const
+	{
+		return data_[idx(idx3)];
+	}
 };
 
 template <class DstTy, class SrcTy>

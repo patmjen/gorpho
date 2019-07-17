@@ -82,7 +82,31 @@ public:
 	const Ty *data() const noexcept
 	{
 		return data_.get();
-	}	
+	}
+
+	__host__
+	Ty& operator[](size_t idx)
+	{
+		return data()[idx];
+	}
+
+	__host__
+	const Ty& operator[](size_t idx) const
+	{
+		return data()[idx];
+	}
+
+	__host__
+	Ty& operator[](int3 idx3)
+	{
+		return data()[idx(idx3)];
+	}
+
+	__host__
+	const Ty& operator[](int3 idx3) const
+	{
+		return data()[idx(idx3)];
+	}
 
 protected:
 	__host__

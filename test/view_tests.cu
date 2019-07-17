@@ -145,3 +145,24 @@ TYPED_TEST(AllViewsTest, Comparison)
 	EXPECT_NE(vw1, vw4);
 	EXPECT_NE(vw1, vw5);
 }
+
+TYPED_TEST(AllViewsTest, Indexing)
+{
+	int3 size = make_int3(2, 3, 4);
+	float data[2 * 3 * 4] = { 0 };
+	for (int i = 0; i < prod(size); ++i) {
+		data[i] = i;
+	}
+
+	typename TestFixture::View vw(data, size);
+	for (int i = 0; i < vw.numel(); ++i) {
+		EXPECT_EQ(vw[i], i);
+	}
+	for (int x = 0; x < vw.size().x; ++x) {
+		for (int y = 0; y < vw.size().y; ++y) {
+			for (int z = 0; z < vw.size().z; ++z) {
+				EXPECT_EQ(vw[make_int3(x, y, z)], vw.idx(x, y, z));
+			}
+		}
+	}
+}
