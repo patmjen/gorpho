@@ -2,10 +2,21 @@
 #define UTIL_CUH__
 
 #include <limits>
+#include <stdexcept>
+#include <string>
 #include <cuda_runtime.h>
 #include <math_constants.h>
 
 namespace gpho {
+
+inline void ensureCudaSuccess(cudaError_t res)
+{
+	if (res != cudaSuccess) {
+		std::string msg("CUDA error: ");
+		msg += cudaGetErrorString(res);
+		throw std::runtime_error(msg);
+	}
+}
 
 template <class Ty> void nonDeleter(Ty *x) {};
 
