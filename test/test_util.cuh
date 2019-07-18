@@ -55,6 +55,37 @@ template <class Ty>
 	return out;
 }
 
+template <class Stream, class Ty>
+void printVol(Stream& stream, gpho::detail::ViewBase<Ty> vol)
+{
+	// Print the volume like NumPy does in Python
+	stream << '[';
+	for (int z = 0; z < vol.size().z; ++z) {
+		if (z > 0) {
+			stream << ' ';
+		}
+		stream << '[';
+		for (int y = 0; y < vol.size().y; ++y) {
+			stream << "[ ";
+			for (int x = 0; x < vol.size().x; ++x) {
+				stream << vol[make_int3(x, y, z)];
+				if (x + 1 < vol.size().x) {
+					stream << ' ';
+				}
+			}
+			stream << " ]";
+			if (y + 1 < vol.size().y) {
+				stream << "\n  ";
+			}
+		}
+		stream << ']';
+		if (z + 1 < vol.size().z) {
+			stream << "\n\n";
+		}
+	}
+	stream << "]\n";
+}
+
 #define EXPECT_VOL_EQ(expected, actual) \
     EXPECT_PRED_FORMAT2([=](auto e1, auto e2, auto a1, auto a2) \
         { return assertVolumeEqual(e1, e2, a1, a2); }, expected, actual)
@@ -94,15 +125,10 @@ template <class Ty1, class Ty2>
 		return ::testing::AssertionSuccess() << expr1 << " and " << expr2 << " are equal.";
 	}
 	auto out = ::testing::AssertionFailure() << expr1 << " and " << expr2 << " differ in " << numFail <<
-		" elements.\nExpected: [" << a1[0];
-	for (int i = 1; i < a1.numel(); i++) {
-		out << ", " << a1[i];
-	}
-	out << "]\nActual:   [" << a2[0];
-	for (int i = 1; i < a2.numel(); i++) {
-		out << ", " << a2[i];
-	}
-	out << "]";
+		" elements.\nExpected:\n";
+	printVol(out, a1);
+	out << "Actual:\n";
+	printVol(out, a2);
 	return out;
 }
 
