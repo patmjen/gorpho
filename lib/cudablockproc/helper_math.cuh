@@ -31,7 +31,6 @@ typedef unsigned short ushort;
 
 #ifndef __CUDACC__
 #include <math.h>
-#error "test"
 
 ////////////////////////////////////////////////////////////////////////////////
 // host implementations of CUDA functions
