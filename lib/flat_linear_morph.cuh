@@ -9,6 +9,7 @@
 
 #include "view.cuh"
 #include "morph.cuh"
+#include "strel.cuh"
 #include "util.cuh"
 
 namespace gpho {

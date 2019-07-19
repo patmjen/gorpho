@@ -22,18 +22,9 @@ enum AxisDir : int {
 	AXIS_DIR_3_NEG = 0x1002
 };
 
-struct LineSeg {
-	int3 step;
-	int numSteps;
-
-	LineSeg() = default;
-	LineSeg(int3 step, int numSteps) :
-		step(step),
-		numSteps(numSteps) {}
-};
-
 } // namespace gpho
 
+#include "strel.cuh"
 #include "general_morph.cuh"
 #include "flat_linear_morph.cuh"
 

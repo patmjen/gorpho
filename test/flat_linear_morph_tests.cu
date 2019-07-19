@@ -8,6 +8,7 @@
 #include "view.cuh"
 #include "morph.cuh"
 #include "flat_linear_morph.cuh"
+#include "strel.cuh"
 #include "test_util.cuh"
 
 // For convenience
