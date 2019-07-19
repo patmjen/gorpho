@@ -243,11 +243,11 @@ TEST_F(FlatLinearMorphTest, EmptyOp)
 		performSingleLineTest(vol, vol, LineSeg(make_int3(0, 0, 0), 5));
 	}
 	{
-		SCOPED_TRACE("NumSteps = 1");
+		SCOPED_TRACE("Length = 1");
 		performSingleLineTest(vol, vol, LineSeg(make_int3(1, 0, 0), 1));
 	}
 	{
-		SCOPED_TRACE("NumSteps = 0");
+		SCOPED_TRACE("Length = 0");
 		performSingleLineTest(vol, vol, LineSeg(make_int3(1, 0, 0), 0));
 	}
 }

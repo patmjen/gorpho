@@ -7,12 +7,12 @@ namespace gpho {
 
 struct LineSeg {
 	int3 step;
-	int numSteps;
+	int length;
 
 	LineSeg() = default;
-	LineSeg(int3 step, int numSteps) :
+	LineSeg(int3 step, int length) :
 		step(step),
-		numSteps(numSteps) {}
+		length(length) {}
 };
 
 } // namespace gpho

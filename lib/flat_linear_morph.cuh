@@ -58,7 +58,7 @@ template <MorphOp op, class Ty>
 __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> vol,
 	DeviceView<Ty> rBuffer, DeviceView<Ty> sBuffer, const LineSeg line, const AxisDir dir)
 {
-	const int halfNumSteps = line.numSteps / 2;
+	const int halfNumSteps = line.length / 2;
 	const int3 gridPos = globalPos3d();
 	const int3 start = getStartPos(gridPos, dir, line.step, vol.size());
 	const int bufOffset = getBufferIdx(gridPos, dir, vol.size()); // Offset into rBuffer and sBuffer
@@ -72,7 +72,7 @@ __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> v
 		// Initial boundary roll - only fill sBuffer
 		if (gridPos.x == 0) {
 			sBuffer[bufOffset] = vol[start];
-			for (int k = 1; k < line.numSteps; k++) {
+			for (int k = 1; k < line.length; k++) {
 				const int3 posk = start + k * line.step;
 				const Ty sv = (posk >= 0 && posk < vol.size()) ? vol[posk] : padVal;
 				if (op == MORPH_ERODE) {
@@ -85,21 +85,21 @@ __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> v
 				const int3 posk = start + line.step * (halfNumSteps - k);
 				if (posk >= 0 && posk < vol.size()) {
 					const size_t ridx = vol.idx(posk);
-					res[ridx] = sBuffer[bufOffset + (line.numSteps - k - 1)*bufStep];
+					res[ridx] = sBuffer[bufOffset + (line.length - k - 1)*bufStep];
 				}
 			}
 		}
 		__syncthreads();
 
 		// Normal van Herk Gil Werman roll
-		int3 pos = start + line.numSteps * line.step;
-		for (; pos >= -line.step * line.numSteps && pos < vol.size() - line.step * line.numSteps; pos += line.step * line.numSteps) {
+		int3 pos = start + line.length * line.step;
+		for (; pos >= -line.step * line.length && pos < vol.size() - line.step * line.length; pos += line.step * line.length) {
 			rsBuffer[bufOffset] = vol[pos];
 			int k = 1;
 			// Loop unrolled for speed. Using #pragma unroll does not seem to have any effect here.
 			// NOTE: Loop unrolling only seems to have an effect when moving along the x-direction
 			int posRs = bufOffset;
-			for (; k + 3 < line.numSteps; k += 4) {
+			for (; k + 3 < line.length; k += 4) {
 				const Ty rsv1 = vol[pos + stepDir * (k + 0)*line.step];
 				const Ty rsv2 = vol[pos + stepDir * (k + 1)*line.step];
 				const Ty rsv3 = vol[pos + stepDir * (k + 2)*line.step];
@@ -118,7 +118,7 @@ __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> v
 				posRs += 4 * bufStep;
 			}
 			// Handle leftovers
-			for (; k < line.numSteps; k++) {
+			for (; k < line.length; k++) {
 				// TODO: Use posRs
 				const Ty rsv1 = vol[pos + stepDir * k*line.step];
 				if (op == MORPH_ERODE) {
@@ -129,8 +129,8 @@ __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> v
 			}
 			__syncthreads();
 			int posR = bufOffset + gridPos.x*bufStep;
-			int posS = bufOffset + (line.numSteps - gridPos.x - 1)*bufStep;
-			for (int k = gridPos.x; k < line.numSteps; k += 2) {
+			int posS = bufOffset + (line.length - gridPos.x - 1)*bufStep;
+			for (int k = gridPos.x; k < line.length; k += 2) {
 				// For some reason it is faster to precompute a linear index here
 				const int ridx1 = vol.idx(pos + line.step * (halfNumSteps - k));
 				if (op == MORPH_ERODE) {
@@ -146,13 +146,13 @@ __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> v
 
 		// End boundary roll
 		// This has a lot of branching code, so we want it in a seperate loop
-		for (; pos >= line.step * line.numSteps && pos <= vol.size() + line.step * line.numSteps; pos += line.step * line.numSteps) {
+		for (; pos >= line.step * line.length && pos <= vol.size() + line.step * line.length; pos += line.step * line.length) {
 			if (pos >= 0 && pos < vol.size()) {
 				rsBuffer[bufOffset] = vol[pos];
 			} else {
 				rsBuffer[bufOffset] = padVal;
 			}
-			for (int k = 1; k < line.numSteps; k++) {
+			for (int k = 1; k < line.length; k++) {
 				const int3 posk = pos + stepDir * k*line.step;
 				const Ty rsv = (posk >= 0 && posk < vol.size()) ? vol[posk] : padVal;
 				if (op == MORPH_ERODE) {
@@ -162,14 +162,14 @@ __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> v
 				}
 			}
 			__syncthreads();
-			for (int k = halfNumSteps * gridPos.x; k < halfNumSteps + (line.numSteps - halfNumSteps)*gridPos.x; k++) {
+			for (int k = halfNumSteps * gridPos.x; k < halfNumSteps + (line.length - halfNumSteps)*gridPos.x; k++) {
 				const int3 posk = pos + line.step * (halfNumSteps - k);
 				if (posk >= 0 && posk < vol.size()) {
 					const size_t ridx = vol.idx(posk);
 					if (op == MORPH_ERODE) {
-						res[ridx] = min(rBuffer[bufOffset + k * bufStep], sBuffer[bufOffset + (line.numSteps - k - 1)*bufStep]);
+						res[ridx] = min(rBuffer[bufOffset + k * bufStep], sBuffer[bufOffset + (line.length - k - 1)*bufStep]);
 					} else if (op == MORPH_DILATE) {
-						res[ridx] = max(rBuffer[bufOffset + k * bufStep], sBuffer[bufOffset + (line.numSteps - k - 1)*bufStep]);
+						res[ridx] = max(rBuffer[bufOffset + k * bufStep], sBuffer[bufOffset + (line.length - k - 1)*bufStep]);
 					}
 				}
 			}
@@ -188,19 +188,19 @@ inline int3 minRSBufferSize(const std::vector<LineSeg>& lines)
     int3 stepSumNeg = make_int3(0, 0, 0);
 	for (const auto& line : lines) {
         if (line.step.x > 0) {
-            stepSumPos.x += line.step.x * line.numSteps;
+            stepSumPos.x += line.step.x * line.length;
         } else {
-            stepSumNeg.x -= line.step.x * line.numSteps;
+            stepSumNeg.x -= line.step.x * line.length;
         }
         if (line.step.y > 0) {
-            stepSumPos.y += line.step.y * line.numSteps;
+            stepSumPos.y += line.step.y * line.length;
         } else {
-            stepSumNeg.y -= line.step.y * line.numSteps;
+            stepSumNeg.y -= line.step.y * line.length;
         }
         if (line.step.z > 0) {
-            stepSumPos.z += line.step.z * line.numSteps;
+            stepSumPos.z += line.step.z * line.length;
         } else {
-            stepSumNeg.z -= line.step.z * line.numSteps;
+            stepSumNeg.z -= line.step.z * line.length;
         }
 	}
 	return max(stepSumNeg, stepSumPos);
@@ -227,7 +227,7 @@ template <MorphOp op, class Ty>
 inline void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> vol, DeviceView<Ty> rBuffer, 
 	DeviceView<Ty> sBuffer, const LineSeg line, cudaStream_t stream = 0)
 {
-	if (line.step == make_int3(0, 0, 0) || line.numSteps <= 1) {
+	if (line.step == make_int3(0, 0, 0) || line.length <= 1) {
 		// Operation won't do anything, so just copy the input to the output and return
 		cudaMemcpyAsync(res.data(), vol.data(), vol.numel() * sizeof(Ty), cudaMemcpyDeviceToDevice, stream);
 		return;
