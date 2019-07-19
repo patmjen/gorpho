@@ -251,3 +251,36 @@ TEST_F(FlatLinearMorphTest, EmptyOp)
 		performSingleLineTest(vol, vol, LineSeg(make_int3(1, 0, 0), 0));
 	}
 }
+
+TEST_F(FlatLinearMorphTest, MultipleEmptyOp)
+{
+	int3 volSize = make_int3(5, 5, 5);
+	float volData[5 * 5 * 5] = { 0.0f };
+	float expectedResData[5 * 5 * 5] = { 0.0f };
+	HostView<float> vol(volData, volSize);
+	HostView<float> expectedRes(expectedResData, volSize);
+
+	vol[make_int3(2, 2, 2)] = 1.0f;
+
+	{
+		SCOPED_TRACE("All empty steps");
+		// For this case, the output should be same as the input
+		performLinesTest(vol, vol, {
+			LineSeg(make_int3(0, 0, 0), 5),
+			LineSeg(make_int3(1, 0, 0), 0)
+		});
+	}
+	{
+		SCOPED_TRACE("One empty step");
+		for (int x = 1; x < 4; ++x) {
+			for (int y = 1; y < 4; ++y) {
+				expectedRes[make_int3(x, y, 2)] = 1.0f;
+			}
+		}
+		performLinesTest(expectedRes, vol, {
+			LineSeg(make_int3(1, 0, 0), 3),
+			LineSeg(make_int3(0, 0, 1), 0),
+			LineSeg(make_int3(0, 1, 0), 3)
+		});
+	}
+}

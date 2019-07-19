@@ -2,6 +2,7 @@
 #define FLAT_LINEAR_MORPH_CUH__
 
 #include <vector>
+#include <algorithm>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
@@ -267,12 +268,24 @@ template <MorphOp op, class Ty>
 inline void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<Ty> resBuffer, DeviceView<const Ty> vol, 
 	DeviceView<Ty> rBuffer, DeviceView<Ty> sBuffer, const std::vector<LineSeg>& lines, cudaStream_t stream = 0)
 {
+	// First, count the number of non-empty structuring elements,
+	// so we know whether to start on res or resBuffer
+	int nonEmptyStrels = std::count_if(lines.begin(), lines.end(), nonEmptyLineSeg);
 	DeviceView<const Ty> crntIn = vol;
-	DeviceView<Ty> crntOut = (lines.size() % 2 == 0) ? resBuffer : res; // Make sure we end on res
+	DeviceView<Ty> crntOut = (nonEmptyStrels % 2 == 0) ? resBuffer : res; // Make sure we end on res
+	bool didOneOp = false;
 	for (const auto& line : lines) {
-		flatLinearDilateErode<op>(crntOut, crntIn, rBuffer, sBuffer, line, stream);
-		crntIn = crntOut;
-		crntOut = (crntOut == res) ? resBuffer : res;
+		// Only do the operation if the structuring element is non-empty
+		if (nonEmptyLineSeg(line)) {
+			didOneOp = true;
+			flatLinearDilateErode<op>(crntOut, crntIn, rBuffer, sBuffer, line, stream);
+			crntIn = crntOut;
+			crntOut = (crntOut == res) ? resBuffer : res;
+		}
+	}
+	if (!didOneOp) {
+		// If we did not do any operation, just copy the input to the result
+		cudaMemcpyAsync(res.data(), vol.data(), vol.numel() * sizeof(Ty), cudaMemcpyDeviceToDevice, stream);
 	}
 }
 
