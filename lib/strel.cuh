@@ -15,6 +15,11 @@ struct LineSeg {
 		length(length) {}
 };
 
+inline bool nonEmptyLineSeg(const LineSeg& line)
+{
+	return line.step != make_int3(0, 0, 0) && line.length > 1;
+}
+
 } // namespace gpho
 
 #endif // STREL_CUH__
