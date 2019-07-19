@@ -2,6 +2,7 @@
 #define VIEW_CUH__
 
 #include <cuda_runtime.h>
+#include <type_traits>
 
 #include "helper_math.cuh"
 #include "util.cuh"
@@ -252,24 +253,36 @@ public:
 template <class DstTy, class SrcTy>
 void transfer(DeviceView<DstTy>& dst, const HostView<SrcTy>& src)
 {
+	static_assert(std::is_same<typename std::remove_const<DstTy>::type, 
+		typename std::remove_const<SrcTy>::type>::value,
+		"Destination and source must have same fundamental type");
 	detail::cudaCopy(dst, src, cudaMemcpyHostToDevice);
 }
 
 template <class DstTy, class SrcTy>
 void transfer(HostView<DstTy>& dst, const DeviceView<SrcTy>& src)
 {
+	static_assert(std::is_same<typename std::remove_const<DstTy>::type,
+		typename std::remove_const<SrcTy>::type>::value,
+		"Destination and source must have same fundamental type");
 	detail::cudaCopy(dst, src, cudaMemcpyDeviceToHost);
 }
 
 template <class DstTy, class SrcTy>
 void copy(HostView<DstTy>& dst, const HostView<SrcTy>& src)
 {
+	static_assert(std::is_same<typename std::remove_const<DstTy>::type,
+		typename std::remove_const<SrcTy>::type>::value,
+		"Destination and source must have same fundamental type");
 	detail::cudaCopy(dst, src, cudaMemcpyHostToHost);
 }
 
 template <class DstTy, class SrcTy>
 void copy(DeviceView<DstTy>& dst, const DeviceView<SrcTy>& src)
 {
+	static_assert(std::is_same<typename std::remove_const<DstTy>::type,
+		typename std::remove_const<SrcTy>::type>::value,
+		"Destination and source must have same fundamental type");
 	detail::cudaCopy(dst, src, cudaMemcpyDeviceToDevice);
 }
 
