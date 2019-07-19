@@ -226,6 +226,11 @@ template <MorphOp op, class Ty>
 inline void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> vol, DeviceView<Ty> rBuffer, 
 	DeviceView<Ty> sBuffer, const LineSeg line, cudaStream_t stream = 0)
 {
+	if (line.step == make_int3(0, 0, 0) || line.numSteps <= 1) {
+		// Operation won't do anything, so just copy the input to the output and return
+		cudaMemcpyAsync(res.data(), vol.data(), vol.numel() * sizeof(Ty), cudaMemcpyDeviceToDevice, stream);
+		return;
+	}
 	const dim3 threads = dim3(2, 16, 16);
 	if (line.step.x != 0) {
 		const dim3 blocks = dim3(

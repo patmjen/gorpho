@@ -228,3 +228,25 @@ TEST_F(FlatLinearMorphTest, HostInput)
 
 	ASSERT_VOL_EQ(expectedRes, res);
 }
+
+TEST_F(FlatLinearMorphTest, EmptyOp)
+{
+	int3 volSize = make_int3(3, 3, 3);
+	float volData[3 * 3 * 3] = { 0.0f };
+	HostView<float> vol(volData, volSize);
+
+	vol[make_int3(1, 1, 1)] = 1.0f;
+
+	{
+		SCOPED_TRACE("Step = (0, 0, 0)");
+		performSingleLineTest(vol, vol, LineSeg(make_int3(0, 0, 0), 5));
+	}
+	{
+		SCOPED_TRACE("NumSteps = 1");
+		performSingleLineTest(vol, vol, LineSeg(make_int3(1, 0, 0), 1));
+	}
+	{
+		SCOPED_TRACE("NumSteps = 0");
+		performSingleLineTest(vol, vol, LineSeg(make_int3(1, 0, 0), 0));
+	}
+}
