@@ -240,11 +240,11 @@ public:
 };
 
 template <class Ty>
-class PinnedView : public detail::ViewBase<Ty> {
+class PinnedView : public HostView<Ty> {
 public:
 	using ConstView = PinnedView<const std::remove_const<Ty>::type>;
 
-	using detail::ViewBase<Ty>::ViewBase; // Inherit constructors
+	using HostView<Ty>::HostView; // Inherit constructors
 	PinnedView() = default;
 	PinnedView(const PinnedView&) = default;
 	PinnedView& operator=(const PinnedView&) = default;
