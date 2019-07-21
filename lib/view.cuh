@@ -207,12 +207,7 @@ void cudaCopy(ViewBase<DstTy>& dst, const ViewBase<SrcTy>& src, cudaMemcpyKind c
 	if (dst.numel() != src.numel()) {
 		throw std::length_error("Source and destination must have same number of elements");
 	}
-	cudaError_t res = cudaMemcpy(dst.data(), src.data(), dst.numel() * sizeof(DstTy), copyKind);
-	if (res != cudaSuccess) {
-		std::string msg = "Error while copying: ";
-		msg += cudaGetErrorString(res);
-		throw std::runtime_error(msg);
-	}
+	ensureCudaSuccess(cudaMemcpy(dst.data(), src.data(), dst.numel() * sizeof(DstTy), copyKind));
 }
 
 } // namespace detail
