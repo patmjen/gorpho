@@ -7,14 +7,14 @@ namespace detail {
     template <>
     struct typeSize<void> : public std::integral_constant<size_t, 1> {};
 
-	template <class Ty>
-	struct removeCVPtr {
-		using type = std::remove_cv<std::remove_pointer<Ty>::type>::type;
-	};
+    template <class Ty>
+    struct removeCVPtr {
+        using type = std::remove_cv<std::remove_pointer<Ty>::type>::type;
+    };
 
-	template <class Ty1, class Ty2>
-	struct pointsToSame : public std::integral_constant<bool,
-		std::is_same<removeCVPtr<Ty1>::type, removeCVPtr<Ty2>::type>::value> {};
+    template <class Ty1, class Ty2>
+    struct pointsToSame : public std::integral_constant<bool,
+        std::is_same<removeCVPtr<Ty1>::type, removeCVPtr<Ty2>::type>::value> {};
 } // namespace detail
 
 MemLocation getMemLocation(const void *ptr)
@@ -74,8 +74,8 @@ template <class InArr, class OutArr, class Func>
 inline CbpResult blockProcMultiple(Func func, const InArr& inVols, const OutArr& outVols,
     cbp::BlockIndexIterator blockIter, const size_t tmpSize)
 {
-	using InTy = typename detail::removeCVPtr<typename InArr::value_type>::type;
-	using OutTy = typename detail::removeCVPtr<typename InArr::value_type>::type;
+    using InTy = typename detail::removeCVPtr<typename InArr::value_type>::type;
+    using OutTy = typename detail::removeCVPtr<typename InArr::value_type>::type;
 
     const int3 blockSize = blockIter.blockSize();
     const int3 borderSize = blockIter.borderSize();
@@ -249,8 +249,8 @@ inline void blockVolumeTransferAll(const VolArr& volArray, const BlkArr& blockAr
 {
     typename VolArr::value_type volPtr;
     typename BlkArr::value_type blkPtr;
-	static_assert(std::is_pointer<decltype(volPtr)>::value, "volArray must contain pointers");
-	static_assert(std::is_pointer<decltype(blkPtr)>::value, "blockArray must contain pointers");
+    static_assert(std::is_pointer<decltype(volPtr)>::value, "volArray must contain pointers");
+    static_assert(std::is_pointer<decltype(blkPtr)>::value, "blockArray must contain pointers");
     static_assert(detail::pointsToSame<decltype(volPtr), decltype(blkPtr)>::value,
         "Volume and block must have same type");
     //for (auto ptrs : detail::zip(volArray, blockArray)) {
@@ -267,10 +267,10 @@ inline void blockVolumeTransferAll(const VolArr& volArray, const BlkArr& blockAr
 template <BlockTransferKind kind, typename VolTy, typename BlkTy>
 inline void blockVolumeTransfer(VolTy *vol, BlkTy *block, const BlockIndex& bi, int3 volSize, cudaStream_t stream)
 {
-	static_assert(detail::pointsToSame<decltype(vol), decltype(block)>::value,
-		"Volume and pointer must point to same type");
-	static_assert(kind == VOL_TO_BLOCK || !std::is_const<VolTy>::value, "Cannot transfer to const volume pointer");
-	static_assert(kind == BLOCK_TO_VOL || !std::is_const<BlkTy>::value, "Cannot transfer to const block pointer");
+    static_assert(detail::pointsToSame<decltype(vol), decltype(block)>::value,
+        "Volume and pointer must point to same type");
+    static_assert(kind == VOL_TO_BLOCK || !std::is_const<VolTy>::value, "Cannot transfer to const volume pointer");
+    static_assert(kind == BLOCK_TO_VOL || !std::is_const<BlkTy>::value, "Cannot transfer to const block pointer");
 
     // TODO: Allow caller to specify which axis corresponds to consecutive values.
     static const size_t sizeOfTy = detail::typeSize<VolTy>();
@@ -278,11 +278,11 @@ inline void blockVolumeTransfer(VolTy *vol, BlkTy *block, const BlockIndex& bi, 
     const int3 blkSizeBdr = bi.blockSizeBorder();
     cudaMemcpy3DParms params = { 0 };
 
-	// We manually check that we are not moving to a const pointer, so it is safe to cast away const
-	const auto volPtr = make_cudaPitchedPtr(const_cast<typename detail::removeCVPtr<VolTy>::type *>(vol),
-		volSize.x * sizeOfTy, volSize.x, volSize.y);
-	const auto blockPtr = make_cudaPitchedPtr(const_cast<typename detail::removeCVPtr<BlkTy>::type *>(block),
-		blkSizeBdr.x * sizeOfTy, blkSizeBdr.x, blkSizeBdr.y);
+    // We manually check that we are not moving to a const pointer, so it is safe to cast away const
+    const auto volPtr = make_cudaPitchedPtr(const_cast<typename detail::removeCVPtr<VolTy>::type *>(vol),
+        volSize.x * sizeOfTy, volSize.x, volSize.y);
+    const auto blockPtr = make_cudaPitchedPtr(const_cast<typename detail::removeCVPtr<BlkTy>::type *>(block),
+        blkSizeBdr.x * sizeOfTy, blkSizeBdr.x, blkSizeBdr.y);
 
     if (kind == VOL_TO_BLOCK) {
         start = bi.startIdxBorder;

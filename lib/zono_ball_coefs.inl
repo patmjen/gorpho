@@ -1,6 +1,6 @@
 3, 0, 0, // Each line gives zono. coefs. a1, a2, a3 which corresponds to radius r = 1,2,...,1000
 2, 0, 2, // Coefficients are computed as described in:
-3, 2, 0, //	    Jensen, P. M., Trinderup, C. H., Dahl, A. B., & Dahl, V. A. (2019, June). 
+3, 2, 0, //     Jensen, P. M., Trinderup, C. H., Dahl, A. B., & Dahl, V. A. (2019, June). 
 2, 2, 2, //     Zonohedral Approximation of Spherical Structuring Element for Volumetric Morphology. 
 3, 3, 0, //     In Scandinavian Conference on Image Analysis (pp. 128-139). Springer.
 2, 3, 2,
