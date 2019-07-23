@@ -66,7 +66,7 @@ inline int3 globalPos3d()
 }
 
 template <typename T>
-__device__
+__host__ __device__
 inline T infOrMax()
 {
 	// TODO: Maybe do specialization for long double?
@@ -74,21 +74,29 @@ inline T infOrMax()
 }
 
 template<>
-__device__
+__host__ __device__
 inline float infOrMax<float>()
 {
+#ifdef __CUDA_ARCH__
 	return CUDART_INF_F;
+#else
+	return std::numeric_limits<float>::infinity();
+#endif
 }
 
 template<>
-__device__
+__host__ __device__
 inline double infOrMax<double>()
 {
+#ifdef __CUDA_ARCH__
 	return CUDART_INF;
+#else
+	return std::numeric_limits<double>::infinity();
+#endif
 }
 
 template <typename T>
-__device__
+__host__ __device__
 inline T minusInfOrMin()
 {
 	// TODO: Maybe do specialization for long double?
@@ -96,17 +104,25 @@ inline T minusInfOrMin()
 }
 
 template<>
-__device__
+__host__ __device__
 inline float minusInfOrMin<float>()
 {
+#ifdef __CUDA_ARCH__
 	return -CUDART_INF_F;
+#else
+	return -std::numeric_limits<float>::infinity();
+#endif
 }
 
 template<>
-__device__
+__host__ __device__
 inline double minusInfOrMin<double>()
 {
+#ifdef __CUDA_ARCH__
 	return -CUDART_INF;
+#else
+	return -std::numeric_limits<double>::infinity();
+#endif
 }
 
 } // namespace kernel
