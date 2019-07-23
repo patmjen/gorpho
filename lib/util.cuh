@@ -69,7 +69,6 @@ template <typename T>
 __host__ __device__
 inline T infOrMax()
 {
-	// TODO: Maybe do specialization for long double?
 	return std::numeric_limits<T>::max();
 }
 
@@ -99,7 +98,6 @@ template <typename T>
 __host__ __device__
 inline T minusInfOrMin()
 {
-	// TODO: Maybe do specialization for long double?
 	return std::numeric_limits<T>::min();
 }
 
