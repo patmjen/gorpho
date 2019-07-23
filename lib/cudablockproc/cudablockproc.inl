@@ -22,7 +22,7 @@ MemLocation getMemLocation(const void *ptr)
     cudaPointerAttributes attr;
     const cudaError_t err = cudaPointerGetAttributes(&attr, ptr);
     if (err == cudaSuccess) {
-        if (attr.memoryType == cudaMemoryTypeHost) {
+        if (attr.type == cudaMemoryTypeHost) {
             return HOST_PINNED;
         } else {
             return DEVICE;
