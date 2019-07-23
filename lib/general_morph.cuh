@@ -5,6 +5,7 @@
 #include <device_launch_parameters.h>
 
 #include "cudablockproc.cuh"
+#include "cusatarit.cuh"
 #include "helper_math.cuh"
 
 #include "volume.cuh"
@@ -37,12 +38,10 @@ __global__ void genDilateErode(DeviceView<Ty> res, DeviceView<const Ty> vol, Dev
 			for (int iy = start.y; iy <= end.y; iy++) {
 				for (int ix = start.x; ix <= end.x; ix++) {
 					const int3 vidx = make_int3(ix, iy, iz);
-					// TODO: These additions might overflow or underflow for integer data - replace with
-					// saturating arithmetic
 					if (op == MORPH_DILATE) {
-						val = max(val, vol[vidx] + strel[vidx - rstart]);
+						val = max(val, csa::satPlus(vol[vidx], strel[vidx - rstart]));
 					} else if (op == MORPH_ERODE) {
-						val = min(val, vol[vidx] - strel[vidx - rstart]);
+						val = min(val, csa::satMinus(vol[vidx], strel[vidx - rstart]));
 					}
 				}
 			}

@@ -18,6 +18,8 @@ const int3 int3_1 = make_int3(1, 1, 1);
 
 using AllPodTypes = ::testing::Types<
 	int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double>;
+using SignedIntAndFloatTypes = ::testing::Types <
+	int8_t, int16_t, int32_t, int64_t, float, double>;
 
 #define EXPECT_CUDA_EQ(expected, actual) \
     EXPECT_PRED_FORMAT2([=](auto e1, auto e2, auto a1, auto a2) \

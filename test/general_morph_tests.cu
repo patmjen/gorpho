@@ -1,6 +1,6 @@
 #include <cuda_runtime.h>
 #include <stdexcept>
-#include < cinttypes>
+#include <cinttypes>
 
 #include "gtest/gtest.h"
 #include "helper_math.cuh"
@@ -8,6 +8,7 @@
 #include "volume.cuh"
 #include "view.cuh"
 #include "general_morph.cuh"
+#include "util.cuh"
 #include "test_util.cuh"
 
 // For convenience
@@ -220,6 +221,98 @@ TYPED_TEST(GeneralMorphTest, HostInput)
 	} catch (const std::exception& e) {
 		FAIL() << e.what();
 	}
+	syncAndAssertCudaSuccess();
+
+	EXPECT_VOL_EQ(expectedRes, res);
+
+	assertCudaSuccess();
+}
+
+template <class Ty>
+class GeneralMorphEmulateFlatTest : public GeneralMorphTest<Ty> {};
+
+// We only test this part for signed integer and float types, since we cannot emulate flat structuring
+// elements when using unigned integer types.
+TYPED_TEST_SUITE(GeneralMorphEmulateFlatTest, SignedIntAndFloatTypes);
+
+TYPED_TEST(GeneralMorphEmulateFlatTest, Dilate)
+{
+	using Type = typename TestFixture::Type;
+	const Type minVal = kernel::minusInfOrMin<Type>();
+	Type expectedResData[] = {
+		0, 1, 0,
+		1, 1, 1,
+		0, 1, 0
+	};
+	Type volData[] = {
+		0, 0, 0,
+		0, 1, 0,
+		0, 0, 0
+	};
+	Type strelData[] = {
+		minVal, 0, minVal,
+		0, 0, 0,
+		minVal, 0, minVal
+	};
+	Type resData[3 * 3 * 1] = { Type(0) };
+
+	int3 volSize = make_int3(3, 3, 1);
+	int3 strelSize = make_int3(3, 3, 1);
+
+	HostView<Type> expectedRes(expectedResData, volSize);
+	HostView<Type> res(resData, volSize);
+	HostView<const Type> vol(volData, volSize);
+	HostView<const Type> strel(strelData, strelSize);
+
+	try {
+		genDilateErode<MORPH_DILATE, Type>(res, vol, strel, make_int3(3, 3, 1));
+	} catch (const std::exception& e) {
+		FAIL() << e.what();
+	}
+
+	syncAndAssertCudaSuccess();
+
+	EXPECT_VOL_EQ(expectedRes, res);
+
+	assertCudaSuccess();
+}
+
+TYPED_TEST(GeneralMorphEmulateFlatTest, Erode)
+{
+	using Type = typename TestFixture::Type;
+	const Type minVal = kernel::minusInfOrMin<Type>();
+	Type expectedResData[] = {
+		1, 0, 1,
+		0, 0, 0,
+		1, 0, 1
+	};
+	Type volData[] = {
+		1, 1, 1,
+		1, 0, 1,
+		1, 1, 1
+	};
+	Type strelData[] = {
+		minVal, 0, minVal,
+		0, 0, 0,
+		minVal, 0, minVal
+	};
+	Type resData[3 * 3 * 1] = { Type(0) };
+
+	int3 volSize = make_int3(3, 3, 1);
+	int3 strelSize = make_int3(3, 3, 1);
+
+	HostView<Type> expectedRes(expectedResData, volSize);
+	HostView<Type> res(resData, volSize);
+	HostView<const Type> vol(volData, volSize);
+	HostView<const Type> strel(strelData, strelSize);
+
+	try {
+		genDilateErode<MORPH_ERODE, Type>(res, vol, strel, make_int3(3, 3, 1));
+	}
+	catch (const std::exception& e) {
+		FAIL() << e.what();
+	}
+
 	syncAndAssertCudaSuccess();
 
 	EXPECT_VOL_EQ(expectedRes, res);
