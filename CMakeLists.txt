@@ -27,11 +27,14 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
 
 enable_language (CUDA)
 
-project ("gorpho" "CUDA")
+project ("gorpho" VERSION 0.1.0
+		          DESCRIPTION "Header-only library for fast GPU morphology with CUDA."
+				  LANGUAGES "CUDA")
 
-include_directories ("lib")
-include_directories ("lib/cudablockproc")
-include_directories (${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+add_library (${PROJECT_NAME} INTERFACE)
+target_include_directories (${PROJECT_NAME} INTERFACE
+	"${${PROJECT_NAME}_SOURCE_DIR}/lib" "${${PROJECT_NAME}_SOURCE_DIR}/lib/cudablockproc")
+# This is to make autocorrect and intellisense work
+target_include_directories (${PROJECT_NAME} INTERFACE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
-enable_testing ()
-add_subdirectory ("test")
+add_subdirectory ("test" EXCLUDE_FROM_ALL)
