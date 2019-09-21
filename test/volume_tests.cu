@@ -200,7 +200,7 @@ TEST(HostVolumeTest, Indexing)
     HostVolume<float> vol;
     ASSERT_NO_THROW(vol = makeHostVolume<float>(size));
     for (int i = 0; i < prod(size); ++i) {
-        vol.data()[i] = i;
+        vol.data()[i] = static_cast<float>(i);
     }
 
     for (int i = 0; i < vol.numel(); ++i) {

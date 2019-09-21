@@ -27,7 +27,7 @@ template <class Ty>
 void performLinesTest(HostView<Ty> expectedRes, HostView<const Ty> vol, const std::vector<LineSeg>& lines,
     bool onlyUseFirstLineSeg = false)
 {
-    size_t bufSize = minTotalBufferSize(minRSBufferSize(lines), vol.size());
+    int bufSize = static_cast<int>(minTotalBufferSize(minRSBufferSize(lines), vol.size()));
     DeviceVolume<Ty> dvol, dres, rBuffer, sBuffer, dresBuffer;
     ASSERT_NO_THROW(dvol = makeDeviceVolume<Ty>(vol.size()));
     ASSERT_NO_THROW(dres = makeDeviceVolume<Ty>(vol.size()));

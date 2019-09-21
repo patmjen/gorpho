@@ -308,8 +308,7 @@ TYPED_TEST(GeneralMorphEmulateFlatTest, Erode)
 
     try {
         genDilateErode<MORPH_ERODE, Type>(res, vol, strel, make_int3(3, 3, 1));
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
         FAIL() << e.what();
     }
 

@@ -151,7 +151,7 @@ TYPED_TEST(AllViewsTest, Indexing)
     int3 size = make_int3(2, 3, 4);
     float data[2 * 3 * 4] = { 0 };
     for (int i = 0; i < prod(size); ++i) {
-        data[i] = i;
+        data[i] = static_cast<float>(i);
     }
 
     typename TestFixture::View vw(data, size);

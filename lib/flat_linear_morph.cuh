@@ -270,7 +270,7 @@ inline void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<Ty> resBuffer, 
 {
     // First, count the number of non-empty structuring elements,
     // so we know whether to start on res or resBuffer
-    int nonEmptyStrels = std::count_if(lines.begin(), lines.end(), nonEmptyLineSeg);
+    size_t nonEmptyStrels = std::count_if(lines.begin(), lines.end(), nonEmptyLineSeg);
     DeviceView<const Ty> crntIn = vol;
     DeviceView<Ty> crntOut = (nonEmptyStrels % 2 == 0) ? resBuffer : res; // Make sure we end on res
     bool didOneOp = false;
@@ -295,7 +295,7 @@ inline void flatLinearDilateErode(HostView<Ty> res, HostView<const Ty> vol, cons
 {
     int3 minBuffer = minRSBufferSize(lines);
     int3 borderSize = blockSize >= vol.size() ? make_int3(0, 0, 0) : minBuffer; // Only use border if needed
-    size_t bufSize = minTotalBufferSize(minBuffer, blockSize + 2 * borderSize);
+    int bufSize = static_cast<int>(minTotalBufferSize(minBuffer, blockSize + 2 * borderSize));
 
     auto processBlock = [&](auto block, auto stream, auto volVec, auto resVec, void *bufAddr)
     {
