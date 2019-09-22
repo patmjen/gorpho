@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 3.10)
 
-option (gorpho_download_googletest "Download and build googletest as part of CMake config" ON)
+option (gorpho_build_tests "Build gorpho tests" OFF)
+option (gorpho_download_googletest "Download and build googletest as part of test config" ON)
 
 enable_language (CUDA)
 
@@ -14,4 +15,7 @@ target_include_directories (${PROJECT_NAME} INTERFACE
 # This is to make autocorrect and intellisense work
 target_include_directories (${PROJECT_NAME} INTERFACE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
-add_subdirectory ("test" EXCLUDE_FROM_ALL)
+if (gorpho_build_tests)
+	enable_testing () # This must be set in the root directory so the tests are discovered
+	add_subdirectory ("test")
+endif ()
