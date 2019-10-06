@@ -12,14 +12,10 @@ namespace detail {
 // Helper values for checking for signed- and unsigned integers
 
 template <class Ty>
-constexpr bool isUnsignedInt() {
-    return std::is_integral<Ty>::value && !std::is_signed<Ty>::value;
-}
+constexpr bool isUnsignedInt = std::is_integral<Ty>::value && !std::is_signed<Ty>::value;
 
 template <class Ty>
-constexpr bool isSignedInt() {
-    return std::is_integral<Ty>::value && std::is_signed<Ty>::value;
-}
+constexpr bool isSignedInt = std::is_integral<Ty>::value && std::is_signed<Ty>::value;
 
 } // namespace detail
 
@@ -27,7 +23,7 @@ constexpr bool isSignedInt() {
 
 template <class Ty>
 __host__ __device__
-inline typename std::enable_if<detail::isUnsignedInt<Ty>(), Ty>::type satPlus(Ty x, Ty y)
+inline typename std::enable_if<detail::isUnsignedInt<Ty>, Ty>::type satPlus(Ty x, Ty y)
 {
     Ty res = x + y;
     return res | -(res < x);
@@ -35,7 +31,7 @@ inline typename std::enable_if<detail::isUnsignedInt<Ty>(), Ty>::type satPlus(Ty
 
 template <class Ty>
 __host__ __device__
-inline typename std::enable_if<detail::isUnsignedInt<Ty>(), Ty>::type satMinus(Ty x, Ty y)
+inline typename std::enable_if<detail::isUnsignedInt<Ty>, Ty>::type satMinus(Ty x, Ty y)
 {
     Ty res = x - y;
     return res & -(res <= x);
@@ -43,7 +39,7 @@ inline typename std::enable_if<detail::isUnsignedInt<Ty>(), Ty>::type satMinus(T
 
 template <class Ty>
 __host__ __device__
-inline typename std::enable_if<detail::isSignedInt<Ty>(), Ty>::type satPlus(Ty x, Ty y)
+inline typename std::enable_if<detail::isSignedInt<Ty>, Ty>::type satPlus(Ty x, Ty y)
 {
     using numLim = std::numeric_limits<Ty>;
     typename std::make_unsigned<Ty>::type ux = x;
@@ -61,7 +57,7 @@ inline typename std::enable_if<detail::isSignedInt<Ty>(), Ty>::type satPlus(Ty x
 
 template <class Ty>
 __host__ __device__
-inline typename std::enable_if<detail::isSignedInt<Ty>(), Ty>::type satMinus(Ty x, Ty y)
+inline typename std::enable_if<detail::isSignedInt<Ty>, Ty>::type satMinus(Ty x, Ty y)
 {
     using numLim = std::numeric_limits<Ty>;
     typename std::make_unsigned<Ty>::type ux = x;
