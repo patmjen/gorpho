@@ -7,7 +7,7 @@ enable_language (CUDA)
 
 project ("gorpho" VERSION 0.1.0
 		          DESCRIPTION "Header-only library for fast GPU morphology with CUDA."
-				  LANGUAGES "CUDA")
+				  LANGUAGES "CUDA" "CXX")
 
 set (CMAKE_CXX_STANDARD 14)
 
