@@ -9,12 +9,13 @@ namespace detail {
 
     template <class Ty>
     struct removeCVPtr {
-        using type = std::remove_cv<std::remove_pointer<Ty>::type>::type;
+        using type = typename std::remove_cv<
+            typename std::remove_pointer<Ty>::type>::type;
     };
 
     template <class Ty1, class Ty2>
     struct pointsToSame : public std::integral_constant<bool,
-        std::is_same<removeCVPtr<Ty1>::type, removeCVPtr<Ty2>::type>::value> {};
+        std::is_same<typename removeCVPtr<Ty1>::type, typename removeCVPtr<Ty2>::type>::value> {};
 } // namespace detail
 
 MemLocation getMemLocation(const void *ptr)

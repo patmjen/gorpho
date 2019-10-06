@@ -125,9 +125,9 @@ inline bool memLocationIs(const void *ptr);
  * @param kind Whether to transfer from volume to block or block to volume.
  * @param stream Current CUDA stream.
  */
-template <typename Ty>
-inline void blockVolumeTransfer(Ty *vol, Ty *block, const BlockIndex& bi, int3 volSize,
-    BlockTransferKind kind, cudaStream_t stream);
+template <BlockTransferKind kind, typename VolTy, typename BlkTy>
+inline void blockVolumeTransfer(VolTy *vol, BlkTy *block, const BlockIndex& bi, int3 volSize,
+    cudaStream_t stream);
 
 /**
  * Transfer memory from multiple volumes to multiple blocks or reverse.  All memory must be on the host.
@@ -138,9 +138,9 @@ inline void blockVolumeTransfer(Ty *vol, Ty *block, const BlockIndex& bi, int3 v
  * @param kind Whether to transfer from volume to block or block to volume.
  * @param stream Current CUDA stream.
  */
-template <typename VolArr, typename BlkArr>
+template <BlockTransferKind kind, typename VolArr, typename BlkArr>
 inline void blockVolumeTransferAll(const VolArr& volArray, const BlkArr& blockArray, const BlockIndex& blkIdx,
-    int3 volSize, BlockTransferKind kind, cudaStream_t stream);
+    int3 volSize, cudaStream_t stream);
 
 /**
  * Copy blocks to/from device.

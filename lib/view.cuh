@@ -116,7 +116,7 @@ class ViewBase : public SizedBase {
 
 public:
     using Type = Ty;
-    using ConstView = ViewBase<const std::remove_const<Ty>::type>;
+    using ConstView = ViewBase<const typename std::remove_const<Ty>::type>;
 
     explicit ViewBase() = default;
 
@@ -200,7 +200,7 @@ public:
 };
 
 template <class DstTy, class SrcTy>
-void cudaCopy(ViewBase<DstTy>& dst, const ViewBase<SrcTy>& src, cudaMemcpyKind copyKind)
+void cudaCopy(ViewBase<DstTy> dst, const ViewBase<SrcTy> src, cudaMemcpyKind copyKind)
 {
     static_assert(std::is_same<typename std::remove_cv<DstTy>::type, typename std::remove_cv<SrcTy>::type>::value,
         "Underlying type for views must be the same");
@@ -215,7 +215,7 @@ void cudaCopy(ViewBase<DstTy>& dst, const ViewBase<SrcTy>& src, cudaMemcpyKind c
 template <class Ty>
 class DeviceView : public detail::ViewBase<Ty> {
 public:
-    using ConstView = DeviceView<const std::remove_const<Ty>::type>;
+    using ConstView = DeviceView<const typename std::remove_const<Ty>::type>;
 
     using detail::ViewBase<Ty>::ViewBase; // Inherit constructors
     DeviceView() = default;
@@ -226,7 +226,7 @@ public:
 template <class Ty>
 class HostView : public detail::ViewBase<Ty> {
 public:
-    using ConstView = HostView<const std::remove_const<Ty>::type>;
+    using ConstView = HostView<const typename std::remove_const<Ty>::type>;
 
     using detail::ViewBase<Ty>::ViewBase; // Inherit constructors
     HostView() = default;
@@ -237,7 +237,7 @@ public:
 template <class Ty>
 class PinnedView : public HostView<Ty> {
 public:
-    using ConstView = PinnedView<const std::remove_const<Ty>::type>;
+    using ConstView = PinnedView<const typename std::remove_const<Ty>::type>;
 
     using HostView<Ty>::HostView; // Inherit constructors
     PinnedView() = default;
@@ -246,16 +246,16 @@ public:
 };
 
 template <class DstTy, class SrcTy>
-void transfer(DeviceView<DstTy>& dst, const HostView<SrcTy>& src)
+void transfer(DeviceView<DstTy> dst, const HostView<SrcTy> src)
 {
-    static_assert(std::is_same<typename std::remove_const<DstTy>::type, 
+    static_assert(std::is_same<typename std::remove_const<DstTy>::type,
         typename std::remove_const<SrcTy>::type>::value,
         "Destination and source must have same fundamental type");
     detail::cudaCopy(dst, src, cudaMemcpyHostToDevice);
 }
 
 template <class DstTy, class SrcTy>
-void transfer(HostView<DstTy>& dst, const DeviceView<SrcTy>& src)
+void transfer(HostView<DstTy> dst, const DeviceView<SrcTy> src)
 {
     static_assert(std::is_same<typename std::remove_const<DstTy>::type,
         typename std::remove_const<SrcTy>::type>::value,

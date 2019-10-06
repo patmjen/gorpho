@@ -9,6 +9,8 @@ project ("gorpho" VERSION 0.1.0
 		          DESCRIPTION "Header-only library for fast GPU morphology with CUDA."
 				  LANGUAGES "CUDA")
 
+set (CMAKE_CXX_STANDARD 14)
+
 add_library (${PROJECT_NAME} INTERFACE)
 target_include_directories (${PROJECT_NAME} INTERFACE
 	"${${PROJECT_NAME}_SOURCE_DIR}/lib" "${${PROJECT_NAME}_SOURCE_DIR}/lib/cudablockproc")

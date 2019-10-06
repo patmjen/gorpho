@@ -118,14 +118,14 @@ TYPED_TEST(GeneralMorphTest, DeviceInput)
     ASSERT_NO_THROW(transfer(dstrel.view(), strel));
 
     genDilateErode<MORPH_DILATE, Type>(dres, dvol, dstrel);
-    syncAndAssertCudaSuccess();
+    this->syncAndAssertCudaSuccess();
 
     HostVolume<Type> res;
     ASSERT_NO_THROW(res = dres.copyToHost());
 
     EXPECT_VOL_EQ(expectedRes, res.view());
 
-    assertCudaSuccess();
+    this->assertCudaSuccess();
 }
 
 TYPED_TEST(GeneralMorphTest, HostInput)
@@ -221,11 +221,11 @@ TYPED_TEST(GeneralMorphTest, HostInput)
     } catch (const std::exception& e) {
         FAIL() << e.what();
     }
-    syncAndAssertCudaSuccess();
+    this->syncAndAssertCudaSuccess();
 
     EXPECT_VOL_EQ(expectedRes, res);
 
-    assertCudaSuccess();
+    this->assertCudaSuccess();
 }
 
 template <class Ty>
@@ -270,11 +270,11 @@ TYPED_TEST(GeneralMorphEmulateFlatTest, Dilate)
         FAIL() << e.what();
     }
 
-    syncAndAssertCudaSuccess();
+    this->syncAndAssertCudaSuccess();
 
     EXPECT_VOL_EQ(expectedRes, res);
 
-    assertCudaSuccess();
+    this->assertCudaSuccess();
 }
 
 TYPED_TEST(GeneralMorphEmulateFlatTest, Erode)
@@ -312,9 +312,9 @@ TYPED_TEST(GeneralMorphEmulateFlatTest, Erode)
         FAIL() << e.what();
     }
 
-    syncAndAssertCudaSuccess();
+    this->syncAndAssertCudaSuccess();
 
     EXPECT_VOL_EQ(expectedRes, res);
 
-    assertCudaSuccess();
+    this->assertCudaSuccess();
 }

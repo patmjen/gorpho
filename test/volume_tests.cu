@@ -188,7 +188,7 @@ TEST(HostVolumeTest, DeviceTransfer)
     HostVolume<float> vol = makeHostVolume<float>(1, 1, 1);
     *vol.data() = expected;
     ASSERT_EQ(*vol.data(), expected);
-    
+
     DeviceVolume<float> dvol;
     ASSERT_NO_THROW(dvol = vol.copyToDevice());
     EXPECT_CUDA_EQ(dvol.data(), expected);
@@ -240,7 +240,7 @@ TYPED_TEST(AllDerivedVolumesTest, GetView)
     // Make sure a const reference returns a const view
     const Volume& constRef = vol;
     auto cvw = constRef.view();
-    ::testing::StaticAssertTypeEq<decltype(cvw)::Type, const Type>();
+    ::testing::StaticAssertTypeEq<typename decltype(cvw)::Type, const Type>();
 }
 
 TYPED_TEST(AllDerivedVolumesTest, ViewConversion)
@@ -260,7 +260,7 @@ TYPED_TEST(AllDerivedVolumesTest, ViewConversion)
     // Make sure a const reference returns a const view
     const Volume& constRef = vol;
     ConstView cvw = constRef.view();
-    ::testing::StaticAssertTypeEq<decltype(cvw)::Type, const Type>();
+    ::testing::StaticAssertTypeEq<typename decltype(cvw)::Type, const Type>();
 }
 
 TYPED_TEST(AllDerivedVolumesTest, Comparison)

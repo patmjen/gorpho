@@ -104,7 +104,7 @@ TYPED_TEST(FlatLinearMorphTest, SingleLineAxisAligned)
         performSingleLineTest<Type>(expectedRes, vol, LineSeg(make_int3(0, 0, 1), 5));
     }
 
-    assertCudaSuccess();
+    this->assertCudaSuccess();
 }
 
 TYPED_TEST(FlatLinearMorphTest, SingleLineAxisAlignedEvenLength)
@@ -133,7 +133,7 @@ TYPED_TEST(FlatLinearMorphTest, SingleLineAxisAlignedEvenLength)
         performSingleLineTest<Type>(expectedRes, vol, LineSeg(make_int3(-1, 0, 0), 2));
     }
 
-    assertCudaSuccess();
+    this->assertCudaSuccess();
 }
 
 TYPED_TEST(FlatLinearMorphTest, SingleLineNotAxisAligned)
@@ -172,7 +172,7 @@ TYPED_TEST(FlatLinearMorphTest, SingleLineNotAxisAligned)
         performSingleLineTest<Type>(expectedRes, vol, LineSeg(make_int3(-1, 1, 0), 3));
     }
 
-    assertCudaSuccess();
+    this->assertCudaSuccess();
 }
 
 TYPED_TEST(FlatLinearMorphTest, MutipleLines)
@@ -201,7 +201,7 @@ TYPED_TEST(FlatLinearMorphTest, MutipleLines)
 
     performLinesTest<Type>(expectedRes, vol, lines);
 
-    assertCudaSuccess();
+    this->assertCudaSuccess();
 }
 
 TYPED_TEST(FlatLinearMorphTest, HostInput)
@@ -237,7 +237,7 @@ TYPED_TEST(FlatLinearMorphTest, HostInput)
     } catch (...) {
         FAIL();
     }
-    syncAndAssertCudaSuccess();
+    this->syncAndAssertCudaSuccess();
 
     ASSERT_VOL_EQ(expectedRes, res);
 }

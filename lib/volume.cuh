@@ -144,19 +144,19 @@ template <class Ty> inline PinnedVolume<Ty> makePinnedVolume(int nx, int ny, int
 // We need this ugly enable_if soup (I think!), as C++ does not allow us to overload on return type.
 
 template <class Vol>
-std::enable_if<std::is_same<Vol, DeviceVolume<typename Vol::Type>>::value, Vol>::type makeVolume(int3 size)
+typename std::enable_if<std::is_same<Vol, DeviceVolume<typename Vol::Type>>::value, Vol>::type makeVolume(int3 size)
 {
     return makeDeviceVolume<typename Vol::Type>(size);
 }
 
 template <class Vol>
-std::enable_if<std::is_same<Vol, HostVolume<typename Vol::Type>>::value, Vol>::type makeVolume(int3 size)
+typename std::enable_if<std::is_same<Vol, HostVolume<typename Vol::Type>>::value, Vol>::type makeVolume(int3 size)
 {
     return makeHostVolume<typename Vol::Type>(size);
 }
 
 template <class Vol>
-std::enable_if<std::is_same<Vol, PinnedVolume<typename Vol::Type>>::value, Vol>::type makeVolume(int3 size)
+typename std::enable_if<std::is_same<Vol, PinnedVolume<typename Vol::Type>>::value, Vol>::type makeVolume(int3 size)
 {
     return makePinnedVolume<typename Vol::Type>(size);
 }
@@ -169,37 +169,37 @@ template <class Ty>
 class DeviceVolume : public detail::VolumeBase<Ty> {
 public:
     using View = DeviceView<Ty>;
-    using ConstView = DeviceView<Ty>::ConstView;
+    using ConstView = typename DeviceView<Ty>::ConstView;
 
     explicit DeviceVolume() = default;
 
     __host__
     explicit DeviceVolume(Ty *data, int3 size) noexcept :
-        VolumeBase(std::shared_ptr<Ty>(data, cudaFree), size) {}
+        DeviceVolume::VolumeBase(std::shared_ptr<Ty>(data, cudaFree), size) {}
 
     __host__
     explicit DeviceVolume(Ty *data, int nx, int ny, int nz) noexcept :
         DeviceVolume(data, make_int3(nx, ny, nz)) {}
 
-    __host__ 
-    DeviceVolume(const DeviceVolume& other) :
-        VolumeBase(other) {}
+    __host__
+    DeviceVolume(const DeviceVolume<Ty>& other) :
+        DeviceVolume::VolumeBase(other) {}
 
     __host__
-    DeviceVolume(DeviceVolume&& other) :
-        VolumeBase(std::move(other)) {}
+    DeviceVolume(DeviceVolume<Ty>&& other) :
+        DeviceVolume::VolumeBase(std::move(other)) {}
 
     __host__
     DeviceVolume& operator=(const DeviceVolume& other)
     {
-        VolumeBase::operator=(other);
+        DeviceVolume::VolumeBase::operator=(other);
         return *this;
     }
 
     __host__
     DeviceVolume& operator=(DeviceVolume&& other)
     {
-        VolumeBase::operator=(std::move(other));
+        DeviceVolume::VolumeBase::operator=(std::move(other));
         return *this;
     }
 
@@ -208,7 +208,7 @@ public:
     __host__
     DeviceVolume<Ty> copy() const
     {
-        DeviceVolume<Ty> out = makeDeviceVolume<Ty>(size());
+        DeviceVolume<Ty> out = makeDeviceVolume<Ty>(this->size());
         gpho::copy<Ty>(out.view(), view());
         return out;
     }
@@ -218,7 +218,7 @@ public:
     __host__
     HostVolume<Ty> copyToHost() const
     {
-        HostVolume<Ty> out = makeHostVolume<Ty>(size());
+        HostVolume<Ty> out = makeHostVolume<Ty>(this->size());
         copyToHost(out);
         return out;
     }
@@ -228,17 +228,17 @@ public:
     __host__
     PinnedVolume<Ty> copyToPinned() const
     {
-        PinnedVolume<Ty> out = makePinnedVolume<Ty>(size());
+        PinnedVolume<Ty> out = makePinnedVolume<Ty>(this->size());
         copyToHost(out);
         return out;
     }
 
     ///
-    /// Copy contents to supplied (pinned or not pinned) host volume. 
+    /// Copy contents to supplied (pinned or not pinned) host volume.
     __host__
-    HostVolume<Ty>& copyToHost(HostVolume<Ty>& dst) const 
+    HostVolume<Ty>& copyToHost(HostVolume<Ty>& dst) const
     {
-        if (numel() != dst.numel()) {
+        if (this->numel() != dst.numel()) {
             throw std::length_error("Must copy to host volume with same number of elements");
         }
         transfer<Ty>(dst.view(), view());
@@ -249,21 +249,21 @@ public:
     /// Return view of device volume
     View view() noexcept
     {
-        return View(data(), size());
+        return View(this->data(), this->size());
     }
 
     ///
     /// Return const view of device volume
     ConstView view() const noexcept
     {
-        return ConstView(data(), size());
+        return ConstView(this->data(), this->size());
     }
 
     ///
     /// Return const view of device volume
     ConstView constView() const noexcept
     {
-        return ConstView(data(), size());
+        return ConstView(this->data(), this->size());
     }
 
     ///
@@ -274,7 +274,7 @@ public:
     }
 
     ///
-    /// Convert to const view of device volume 
+    /// Convert to const view of device volume
     operator ConstView() const
     {
         return view();
@@ -308,14 +308,14 @@ template <class Ty>
 class HostVolume : public detail::VolumeBase<Ty> {
 public:
     using View = HostView<Ty>;
-    using ConstView = HostView<Ty>::ConstView;
+    using ConstView = typename HostView<Ty>::ConstView;
 
     explicit HostVolume() = default;
 
     template <class Del>
     __host__
     explicit HostVolume(Ty *data, int3 size, Del deleter) noexcept :
-        VolumeBase(std::shared_ptr<Ty>(data, deleter), size) {}
+        HostVolume::VolumeBase(std::shared_ptr<Ty>(data, deleter), size) {}
 
     __host__
     explicit HostVolume(Ty *data, int3 size) noexcept :
@@ -332,30 +332,30 @@ public:
 
     __host__
     HostVolume(const HostVolume& other) :
-        VolumeBase(other) {}
+        HostVolume::VolumeBase(other) {}
 
     __host__
     HostVolume(HostVolume&& other) :
-        VolumeBase(std::move(other)) {}
+        HostVolume::VolumeBase(std::move(other)) {}
 
     __host__
     HostVolume& operator=(const HostVolume& other)
     {
-        VolumeBase::operator=(other);
+        HostVolume::VolumeBase::operator=(other);
         return *this;
     }
 
     __host__
     HostVolume& operator=(HostVolume&& other)
     {
-        VolumeBase::operator=(std::move(other));
+        HostVolume::VolumeBase::operator=(std::move(other));
         return *this;
     }
 
     __host__
     HostVolume<Ty> copy() const
     {
-        HostVolume<Ty> out = makeHostVolume(size());
+        HostVolume<Ty> out = makeHostVolume(this->size());
         gpho::copy<Ty>(out.view(), view());
         return out;
     }
@@ -363,14 +363,14 @@ public:
     __host__
     DeviceVolume<Ty> copyToDevice() const
     {
-        DeviceVolume<Ty> out = makeDeviceVolume<Ty>(size());
+        DeviceVolume<Ty> out = makeDeviceVolume<Ty>(this->size());
         copyToDevice(out);
         return out;
     }
 
     __host__
     DeviceVolume<Ty>& copyToDevice(DeviceVolume<Ty>& dst) const {
-        if (numel() != dst.numel()) {
+        if (this->numel() != dst.numel()) {
             throw std::length_error("Must copy to DeviceVolume with same number of elements");
         }
         transfer<Ty>(dst.view(), view());
@@ -381,21 +381,21 @@ public:
     /// Return view of host volume
     View view() noexcept
     {
-        return View(data(), size());
+        return View(this->data(), this->size());
     }
 
     ///
     /// Return const view of host volume
     ConstView view() const noexcept
     {
-        return ConstView(data(), size());
+        return ConstView(this->data(), this->size());
     }
 
     ///
     /// Return const view of device volume
     ConstView constView() const noexcept
     {
-        return ConstView(data(), size());
+        return ConstView(this->data(), this->size());
     }
 
     ///
@@ -406,7 +406,7 @@ public:
     }
 
     ///
-    /// Convert to const view of host volume 
+    /// Convert to const view of host volume
     operator ConstView() const
     {
         return view();
@@ -436,13 +436,13 @@ template <class Ty>
 class PinnedVolume : public HostVolume<Ty> {
 public:
     using View = PinnedView<Ty>;
-    using ConstView = PinnedView<Ty>::ConstView;
+    using ConstView = typename PinnedView<Ty>::ConstView;
 
     explicit PinnedVolume() = default;
 
     __host__
     explicit PinnedVolume(Ty *data, int3 size) noexcept :
-        HostVolume(data, size, cudaFreeHost) {}
+        PinnedVolume::HostVolume(data, size, cudaFreeHost) {}
 
     __host__
     explicit PinnedVolume(Ty *data, int nx, int ny, int nz) noexcept :
@@ -450,30 +450,30 @@ public:
 
     __host__
     PinnedVolume(const PinnedVolume& other) :
-        HostVolume(other) {}
+        PinnedVolume::HostVolume(other) {}
 
     __host__
     PinnedVolume(PinnedVolume&& other) :
-        HostVolume(std::move(other)) {}
+        PinnedVolume::HostVolume(std::move(other)) {}
 
     __host__
     PinnedVolume& operator=(const PinnedVolume& other)
     {
-        HostVolume::operator=(other);
+        PinnedVolume::HostVolume::operator=(other);
         return *this;
     }
 
     __host__
     PinnedVolume& operator=(PinnedVolume&& other)
     {
-        HostVolume::operator=(std::move(other));
+        PinnedVolume::HostVolume::operator=(std::move(other));
         return *this;
     }
 
     __host__
     PinnedVolume<Ty> copy() const
     {
-        PinnedVolume<Ty> out = makePinnedVolume(size());
+        PinnedVolume<Ty> out = makePinnedVolume(this->size());
         copyTo_(out, cudaMemcpyHostToHost);
         return out;
     }
@@ -482,21 +482,21 @@ public:
     /// Return view of pinned volume
     View view() noexcept
     {
-        return View(data(), size());
+        return View(this->data(), this->size());
     }
 
     ///
     /// Return const view of pinned volume
     ConstView view() const noexcept
     {
-        return ConstView(data(), size());
+        return ConstView(this->data(), this->size());
     }
 
     ///
     /// Return const view of device volume
     ConstView constView() const noexcept
     {
-        return ConstView(data(), size());
+        return ConstView(this->data(), this->size());
     }
 
     ///
@@ -507,7 +507,7 @@ public:
     }
 
     ///
-    /// Convert to const view of pinned volume 
+    /// Convert to const view of pinned volume
     operator ConstView() const
     {
         return view();

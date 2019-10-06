@@ -22,23 +22,19 @@ using SignedIntAndFloatTypes = ::testing::Types <
     int8_t, int16_t, int32_t, int64_t, float, double>;
 
 #define EXPECT_CUDA_EQ(expected, actual) \
-    EXPECT_PRED_FORMAT2([=](auto e1, auto e2, auto a1, auto a2) \
-        { return assertDevicePtrEqual(e1, e2, a1, a2); }, expected, actual)
+    EXPECT_PRED_FORMAT2(assertDevicePtrEqual, expected, actual)
 
 #define ASSERT_CUDA_EQ(expected, actual) \
-    ASSERT_PRED_FORMAT2([=](auto e1, auto e2, auto a1, auto a2) \
-        { return assertDevicePtrEqual(e1, e2, a1, a2); }, expected, actual)
+    ASSERT_PRED_FORMAT2(assertDevicePtrEqual, expected, actual)
 
 #define EXPECT_CUDA_NE(expected, actual) \
-    EXPECT_PRED_FORMAT2([=](auto e1, auto e2, auto a1, auto a2) \
-        { return !assertDevicePtrEqual(e1, e2, a1, a2); }, expected, actual)
+    EXPECT_PRED_FORMAT2(assertDevicePtrNotEqual, expected, actual)
 
 #define ASSERT_CUDA_NE(expected, actual) \
-    ASSERT_PRED_FORMAT2([=](auto e1, auto e2, auto a1, auto a2) \
-        { return !assertDevicePtrEqual(e1, e2, a1, a2); }, expected, actual)
+    ASSERT_PRED_FORMAT2(assertDevicePtrNotEqual, expected, actual)
 
 template <class Ty>
-::testing::AssertionResult assertDevicePtrEqual(const char *exprPtr, const char *exprExpected, 
+::testing::AssertionResult assertDevicePtrEqual(const char *exprPtr, const char *exprExpected,
     const Ty *ptr, Ty expected)
 {
     Ty actual;
@@ -58,6 +54,13 @@ template <class Ty>
     out << "Device value was pointed by:\n  " << exprPtr << "\n  which was:\n  " << actual << "\n";
     out << "Expected value:\n  " << exprExpected << "\nwhich was:\n  " << expected;
     return out;
+}
+
+template <class Ty>
+::testing::AssertionResult assertDevicePtrNotEqual(const char *exprPtr, const char *exprExpected,
+    const Ty *ptr, Ty expected)
+{
+    return !assertDevicePtrEqual(exprPtr, exprExpected, ptr, expected);
 }
 
 template <class Stream, class Ty>
@@ -92,20 +95,16 @@ void printVol(Stream& stream, gpho::detail::ViewBase<Ty> vol)
 }
 
 #define EXPECT_VOL_EQ(expected, actual) \
-    EXPECT_PRED_FORMAT2([=](auto e1, auto e2, auto a1, auto a2) \
-        { return assertVolumeEqual(e1, e2, a1, a2); }, expected, actual)
+    EXPECT_PRED_FORMAT2(assertVolumeEqual, expected, actual)
 
 #define ASSERT_VOL_EQ(expected, actual) \
-    ASSERT_PRED_FORMAT2([=](auto e1, auto e2, auto a1, auto a2) \
-        { return assertVolumeEqual(e1, e2, a1, a2); }, expected, actual)
+    ASSERT_PRED_FORMAT2(assertVolumeEqual, expected, actual)
 
 #define EXPECT_VOL_NE(expected, actual) \
-    EXPECT_PRED_FORMAT2([=](auto e1, auto e2, auto a1, auto a2) \
-        { return !assertVolumeEqual(e1, e2, a1, a2); }, expected, actual)
+    EXPECT_PRED_FORMAT2(assertVolumeNotEqual, expected, actual)
 
 #define ASSERT_VOL_NE(expected, actual) \
-    ASSERT_PRED_FORMAT2([=](auto e1, auto e2, auto a1, auto a2) \
-        { return !assertVolumeEqual(e1, e2, a1, a2); }, expected, actual)
+    ASSERT_PRED_FORMAT2(assertVolumeNotEqual, expected, actual)
 
 template <class Ty1, class Ty2>
 ::testing::AssertionResult assertVolumeEqual(const char *expr1, const char *expr2,
@@ -135,6 +134,13 @@ template <class Ty1, class Ty2>
     out << "Actual:\n";
     printVol(out, a2);
     return out;
+}
+
+template <class Ty1, class Ty2>
+::testing::AssertionResult assertVolumeNotEqual(const char *expr1, const char *expr2,
+    gpho::detail::ViewBase<Ty1> a1, gpho::detail::ViewBase<Ty2> a2)
+{
+    return !assertVolumeEqual(expr1, expr2, a1, a2);
 }
 
 template <class Ty>

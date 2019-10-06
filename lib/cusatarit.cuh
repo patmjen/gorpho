@@ -12,10 +12,14 @@ namespace detail {
 // Helper values for checking for signed- and unsigned integers
 
 template <class Ty>
-constexpr bool isUnsignedInt = std::is_integral_v<Ty> && !std::is_signed_v<Ty>;
+constexpr bool isUnsignedInt() {
+    return std::is_integral<Ty>::value && !std::is_signed<Ty>::value;
+}
 
 template <class Ty>
-constexpr bool isSignedInt = std::is_integral_v<Ty> && std::is_signed_v<Ty>;
+constexpr bool isSignedInt() {
+    return std::is_integral<Ty>::value && std::is_signed<Ty>::value;
+}
 
 } // namespace detail
 
@@ -23,7 +27,7 @@ constexpr bool isSignedInt = std::is_integral_v<Ty> && std::is_signed_v<Ty>;
 
 template <class Ty>
 __host__ __device__
-inline std::enable_if_t<detail::isUnsignedInt<Ty>, Ty> satPlus(Ty x, Ty y)
+inline typename std::enable_if<detail::isUnsignedInt<Ty>(), Ty>::type satPlus(Ty x, Ty y)
 {
     Ty res = x + y;
     return res | -(res < x);
@@ -31,7 +35,7 @@ inline std::enable_if_t<detail::isUnsignedInt<Ty>, Ty> satPlus(Ty x, Ty y)
 
 template <class Ty>
 __host__ __device__
-inline std::enable_if_t<detail::isUnsignedInt<Ty>, Ty> satMinus(Ty x, Ty y)
+inline typename std::enable_if<detail::isUnsignedInt<Ty>(), Ty>::type satMinus(Ty x, Ty y)
 {
     Ty res = x - y;
     return res & -(res <= x);
@@ -39,12 +43,12 @@ inline std::enable_if_t<detail::isUnsignedInt<Ty>, Ty> satMinus(Ty x, Ty y)
 
 template <class Ty>
 __host__ __device__
-inline std::enable_if_t<detail::isSignedInt<Ty>, Ty> satPlus(Ty x, Ty y)
+inline typename std::enable_if<detail::isSignedInt<Ty>(), Ty>::type satPlus(Ty x, Ty y)
 {
     using numLim = std::numeric_limits<Ty>;
-    std::make_unsigned_t<Ty> ux = x;
-    std::make_unsigned_t<Ty> uy = y;
-    std::make_unsigned_t<Ty> res = ux + uy;
+    typename std::make_unsigned<Ty>::type ux = x;
+    typename std::make_unsigned<Ty>::type uy = y;
+    typename std::make_unsigned<Ty>::type res = ux + uy;
 
     ux = (ux >> numLim::digits) + numLim::max();
 
@@ -57,12 +61,12 @@ inline std::enable_if_t<detail::isSignedInt<Ty>, Ty> satPlus(Ty x, Ty y)
 
 template <class Ty>
 __host__ __device__
-inline std::enable_if_t<detail::isSignedInt<Ty>, Ty> satMinus(Ty x, Ty y)
+inline typename std::enable_if<detail::isSignedInt<Ty>(), Ty>::type satMinus(Ty x, Ty y)
 {
     using numLim = std::numeric_limits<Ty>;
-    std::make_unsigned_t<Ty> ux = x;
-    std::make_unsigned_t<Ty> uy = y;
-    std::make_unsigned_t<Ty> res = ux - uy;
+    typename std::make_unsigned<Ty>::type ux = x;
+    typename std::make_unsigned<Ty>::type uy = y;
+    typename std::make_unsigned<Ty>::type res = ux - uy;
 
     ux = (ux >> numLim::digits) + numLim::max();
 
@@ -76,14 +80,14 @@ inline std::enable_if_t<detail::isSignedInt<Ty>, Ty> satMinus(Ty x, Ty y)
 #ifndef CUSATARIT_DISABLE_FLOAT
 template <class Ty>
 __host__ __device__
-inline std::enable_if_t<std::is_floating_point_v<Ty>, Ty> satPlus(Ty x, Ty y)
+inline typename std::enable_if<std::is_floating_point<Ty>::value, Ty>::type satPlus(Ty x, Ty y)
 {
     return x + y;
 }
 
 template <class Ty>
 __host__ __device__
-inline std::enable_if_t<std::is_floating_point_v<Ty>, Ty> satMinus(Ty x, Ty y)
+inline typename std::enable_if<std::is_floating_point<Ty>::value, Ty>::type satMinus(Ty x, Ty y)
 {
     return x - y;
 }
@@ -93,7 +97,7 @@ template <class Ty, class Enable=void>
 struct Saturate;
 
 template <class Ty>
-struct Saturate<Ty, std::enable_if_t<std::is_arithmetic_v<Ty>>> {
+struct Saturate<Ty, typename std::enable_if<std::is_arithmetic<Ty>::value>::type> {
     typedef Ty ValueType;
     typedef Saturate<Ty> Self;
 
