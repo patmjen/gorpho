@@ -20,11 +20,21 @@ namespace detail {
 
 MemLocation getMemLocation(const void *ptr)
 {
+    // The cudaMemoryTypeUnregistered was introduced in CUDA 10.0.
+    // For previous versions, passing unregistered memory would cause cudaPointerGetAttributes to
+    // return an error.
     cudaPointerAttributes attr;
     const cudaError_t err = cudaPointerGetAttributes(&attr, ptr);
     if (err == cudaSuccess) {
+#if CUDART_VERSION < 10000
+        if (attr.memoryType == cudaMemoryTypeHost) {
+            return HOST_PINNED;
+#else
         if (attr.type == cudaMemoryTypeHost) {
             return HOST_PINNED;
+        } else if (attr.type == cudaMemoryTypeUnregistered) {
+	    return HOST_NORMAL;
+#endif
         } else {
             return DEVICE;
         }
