@@ -28,7 +28,7 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
                  EXCLUDE_FROM_ALL)
 endif ()
 
-add_executable (tests volume_tests.cu view_tests.cu general_morph_tests.cu flat_linear_morph_tests.cu strel_tests.cu util_tests.cu)
+add_executable (tests volume_tests.cu view_tests.cu general_morph_tests.cu flat_morph_tests.cu flat_linear_morph_tests.cu strel_tests.cu util_tests.cu)
 target_compile_options (tests PUBLIC "--expt-relaxed-constexpr" "-lineinfo" "--std=c++14")
 target_link_libraries (tests gtest_main gorpho)
 add_test (NAME all_tests COMMAND tests)
