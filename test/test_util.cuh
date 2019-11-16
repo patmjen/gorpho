@@ -3,6 +3,8 @@
 
 #include <cuda_runtime.h>
 
+#include "view.cuh"
+
 #define ASSERT_CUDA_SUCCESS(expr) do { \
     cudaError_t res__ = (expr); \
     ASSERT_EQ(res__, cudaSuccess) << "Expression '" #expr "' resulted in CUDA error: " << cudaGetErrorString(res__); \
