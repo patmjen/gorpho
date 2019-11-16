@@ -21,6 +21,13 @@ inline void ensureCudaSuccess(cudaError_t res)
 
 template <class Ty> void nonDeleter(Ty *x) {};
 
+template <class Ty>
+__host__ __device__
+inline Ty zeroOrOne(bool b)
+{
+    return static_cast<Ty>(b);
+}
+
 __host__ __device__
 inline int prod(const int3 a)
 {
