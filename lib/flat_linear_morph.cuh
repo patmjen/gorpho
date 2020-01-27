@@ -90,7 +90,6 @@ __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> v
                 }
             }
         }
-        __syncthreads();
 
         // Normal van Herk Gil Werman roll
         int3 pos = start + line.length * line.step;
@@ -128,7 +127,6 @@ __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> v
                     rsBuffer[bufOffset + k * bufStep] = max(rsv1, rsBuffer[bufOffset + (k - 1)*bufStep]);
                 }
             }
-            __syncthreads();
             int posR = bufOffset + gridPos.x*bufStep;
             int posS = bufOffset + (line.length - gridPos.x - 1)*bufStep;
             for (int k = gridPos.x; k < line.length; k += 2) {
@@ -142,7 +140,6 @@ __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> v
                 posR += 2 * bufStep;
                 posS -= 2 * bufStep;
             }
-            __syncthreads();
         }
 
         // End boundary roll
@@ -162,7 +159,6 @@ __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> v
                     rsBuffer[bufOffset + k * bufStep] = max(rsv, rsBuffer[bufOffset + (k - 1)*bufStep]);
                 }
             }
-            __syncthreads();
             for (int k = halfNumSteps * gridPos.x; k < halfNumSteps + (line.length - halfNumSteps)*gridPos.x; k++) {
                 const int3 posk = pos + line.step * (halfNumSteps - k);
                 if (posk >= 0 && posk < vol.size()) {
@@ -174,7 +170,6 @@ __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> v
                     }
                 }
             }
-            __syncthreads();
         }
     }
 }
