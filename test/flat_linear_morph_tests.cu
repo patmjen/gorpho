@@ -139,26 +139,26 @@ TYPED_TEST(FlatLinearMorphTest, SingleLineAxisAlignedEvenLength)
 TYPED_TEST(FlatLinearMorphTest, SingleLineNotAxisAligned)
 {
     using Type = typename TestFixture::Type;
-    int3 volSize = make_int3(5, 5, 5);
-    Type expectedResData[5 * 5 * 5];
-    Type volData[5 * 5 * 5] = { Type(0) };
+    int3 volSize = make_int3(9, 9, 9);
+    Type expectedResData[9 * 9 * 9];
+    Type volData[9 * 9 * 9] = { Type(0) };
     HostView<Type> expectedRes(expectedResData, volSize);
     HostView<Type> vol(volData, volSize);
 
-    vol[make_int3(2, 2, 2)] = Type(1);
+    vol[make_int3(4, 4, 4)] = Type(1);
 
     {
         SCOPED_TRACE("Step = (1, 1, 0)");
         std::fill(expectedRes.data(), expectedRes.data() + expectedRes.numel(), 0);
-        for (int i = 1; i < 4; ++i) {
-            expectedRes[make_int3(i, i, 2)] = Type(1);
+        for (int i = 3; i < 6; ++i) {
+            expectedRes[make_int3(i, i, 4)] = Type(1);
         }
         performSingleLineTest<Type>(expectedRes, vol, LineSeg(make_int3(1, 1, 0), 3));
     }
     {
         SCOPED_TRACE("Step = (1, 1, 1)");
         std::fill(expectedRes.data(), expectedRes.data() + expectedRes.numel(), 0);
-        for (int i = 1; i < 4; ++i) {
+        for (int i = 3; i < 6; ++i) {
             expectedRes[make_int3(i, i, i)] = Type(1);
         }
         performSingleLineTest<Type>(expectedRes, vol, LineSeg(make_int3(1, 1, 1), 3));
@@ -166,8 +166,8 @@ TYPED_TEST(FlatLinearMorphTest, SingleLineNotAxisAligned)
     {
         SCOPED_TRACE("Step = (-1, 1, 0)");
         std::fill(expectedRes.data(), expectedRes.data() + expectedRes.numel(), 0);
-        for (int i = 1; i < 4; ++i) {
-            expectedRes[make_int3(4 - i, i, 2)] = Type(1);
+        for (int i = 3; i < 6; ++i) {
+            expectedRes[make_int3(8 - i, i, 4)] = Type(1);
         }
         performSingleLineTest<Type>(expectedRes, vol, LineSeg(make_int3(-1, 1, 0), 3));
     }
