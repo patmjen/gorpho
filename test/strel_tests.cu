@@ -31,7 +31,7 @@ TEST(FlatBallApproxTest, ValidRadius)
 {
     auto lines = flatBallApprox(7);
     int expectedLengths[13] = {
-        4, 4, 4,
+        3, 3, 3,
         2, 2, 2, 2, 2, 2,
         3, 3, 3, 3
     };
@@ -53,8 +53,48 @@ TEST(FlatBallApproxTest, ValidRadius)
         { 1, -1,  1 },
         {-1,  1,  1 }
     };
-    for (int i = 0; i < 0; ++i) {
+    for (int i = 0; i < 13; ++i) {
         ASSERT_EQ(lines[i].length, expectedLengths[i]);
         ASSERT_EQ(lines[i].step, expectedSteps[i]);
+    }
+}
+
+TEST(FlatBallApproxTest, ApproximationTypes)
+{
+    {
+        SCOPED_TRACE("Inside");
+        auto lines = flatBallApprox(23, APPROX_INSIDE);
+        int expectedLengths[13] = {
+            7, 7, 7,
+            6, 6, 6, 6, 6, 6,
+            5, 5, 5, 5
+        };
+        for (int i = 0; i < 13; ++i) {
+            ASSERT_EQ(lines[i].length, expectedLengths[i]);
+        }
+    }
+    {
+        SCOPED_TRACE("Best");
+        auto lines = flatBallApprox(23, APPROX_BEST);
+        int expectedLengths[13] = {
+            9, 9, 9,
+            6, 6, 6, 6, 6, 6,
+            5, 5, 5, 5
+        };
+        for (int i = 0; i < 13; ++i) {
+            ASSERT_EQ(lines[i].length, expectedLengths[i]);
+        }
+    }
+    {
+        SCOPED_TRACE("Outside");
+        auto lines = flatBallApprox(23, APPROX_OUTSIDE);
+        int expectedLengths[13] = {
+            11, 11, 11,
+            6, 6, 6, 6, 6, 6,
+            5, 5, 5, 5
+        };
+        for (int i = 0; i < 13; ++i) {
+            ASSERT_EQ(lines[i].length, expectedLengths[i]);
+        }
     }
 }
