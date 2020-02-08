@@ -6,8 +6,8 @@ option (gorpho_download_googletest "Download and build googletest as part of tes
 enable_language (CUDA)
 
 project ("gorpho" VERSION 0.2.0
-		          DESCRIPTION "Header-only library for fast GPU morphology with CUDA."
-				  LANGUAGES "CUDA" "CXX")
+                  DESCRIPTION "Header-only library for fast GPU morphology with CUDA."
+                  LANGUAGES "CUDA" "CXX")
 
 set (CMAKE_CXX_STANDARD 14)
 
