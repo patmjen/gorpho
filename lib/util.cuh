@@ -51,6 +51,11 @@ inline unsigned int gridAxisBlocks(unsigned int nthr, int len)
     return len / nthr + ((len % nthr != 0) ? 1 : 0);
 }
 
+inline size_t gridAxisBlocks(size_t nthr, size_t len)
+{
+    return len / nthr + ((len % nthr != 0) ? 1 : 0);
+}
+
 inline dim3 gridBlocks(const dim3 thrConfig, const int3 size)
 {
     return dim3(
