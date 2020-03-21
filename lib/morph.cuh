@@ -27,5 +27,6 @@ enum AxisDir : int {
 #include "strel.cuh"
 #include "general_morph.cuh"
 #include "flat_linear_morph.cuh"
+#include "flat_morph.cuh"
 
 #endif // MORPH_CUH__
