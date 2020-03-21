@@ -18,6 +18,7 @@ namespace kernel {
 template <MorphOp op, class Ty>
 __global__ void flatDilateErode(DeviceView<Ty> res, DeviceView<const Ty> vol, DeviceView<const bool> strel)
 {
+    static_assert(op == MORPH_DILATE || op == MORPH_ERODE, "op must be MORPH_DILATE or MORPH_ERODE");
     const int3 pos = globalPos3d();
 
     // Make sure we are within array bounds
@@ -59,6 +60,7 @@ __global__ void flatDilateErode(DeviceView<Ty> res, DeviceView<const Ty> vol, De
 template <MorphOp op, class Ty>
 void flatDilateErode(DeviceView<Ty> res, DeviceView<const Ty> vol, DeviceView<const bool> strel, cudaStream_t stream = 0)
 {
+    static_assert(op == MORPH_DILATE || op == MORPH_ERODE, "op must be MORPH_DILATE or MORPH_ERODE");
     dim3 threads = dim3(8, 8, 8);
     dim3 blocks = gridBlocks(threads, vol.size());
     kernel::flatDilateErode<op><<<blocks, threads, 0, stream>>>(res, vol, strel);
@@ -68,6 +70,7 @@ template <MorphOp op, class Ty>
 void flatDilateErode(HostView<Ty> res, HostView<const Ty> vol, DeviceView<const bool> strel,
     int3 blockSize = make_int3(256, 256, 256))
 {
+    static_assert(op == MORPH_DILATE || op == MORPH_ERODE, "op must be MORPH_DILATE or MORPH_ERODE");
     auto processBlock = [&](auto block, auto stream, auto volVec, auto resVec, void *buf)
     {
         const int3 size = block.blockSizeBorder();
@@ -90,6 +93,7 @@ template <MorphOp op, class Ty>
 void flatDilateErode(HostView<Ty> res, HostView<const Ty> vol, HostView<const bool> strel,
     int3 blockSize = make_int3(256, 256, 256))
 {
+    static_assert(op == MORPH_DILATE || op == MORPH_ERODE, "op must be MORPH_DILATE or MORPH_ERODE");
     DeviceVolume<bool> dstrel = makeDeviceVolume<bool>(strel.size());
     transfer(dstrel.view(), strel);
     flatDilateErode<op>(res, vol, dstrel.constView(), blockSize);

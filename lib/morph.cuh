@@ -7,7 +7,9 @@ namespace gpho {
 
 enum MorphOp {
     MORPH_DILATE,
-    MORPH_ERODE
+    MORPH_ERODE,
+    MORPH_OPEN,
+    MORPH_CLOSE
 };
 
 enum AxisDir : int {

@@ -59,6 +59,7 @@ template <MorphOp op, class Ty>
 __global__ void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> vol,
     DeviceView<Ty> rBuffer, DeviceView<Ty> sBuffer, const LineSeg line, const AxisDir dir)
 {
+    static_assert(op == MORPH_DILATE || op == MORPH_ERODE, "op must be MORPH_DILATE or MORPH_ERODE");
     const int halfNumSteps = line.length / 2;
     const int3 gridPos = globalPos3d();
     const int3 start = getStartPos(gridPos, dir, line.step, vol.size());
@@ -223,6 +224,7 @@ template <MorphOp op, class Ty>
 inline void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<const Ty> vol, DeviceView<Ty> rBuffer, 
     DeviceView<Ty> sBuffer, const LineSeg line, cudaStream_t stream = 0)
 {
+    static_assert(op == MORPH_DILATE || op == MORPH_ERODE, "op must be MORPH_DILATE or MORPH_ERODE");
     if (!nonEmptyLineSeg(line)) {
         // Operation won't do anything, so just copy the input to the output and return
         cudaMemcpyAsync(res.data(), vol.data(), vol.numel() * sizeof(Ty), cudaMemcpyDeviceToDevice, stream);
@@ -263,6 +265,7 @@ template <MorphOp op, class Ty>
 inline void flatLinearDilateErode(DeviceView<Ty> res, DeviceView<Ty> resBuffer, DeviceView<const Ty> vol, 
     DeviceView<Ty> rBuffer, DeviceView<Ty> sBuffer, const std::vector<LineSeg>& lines, cudaStream_t stream = 0)
 {
+    static_assert(op == MORPH_DILATE || op == MORPH_ERODE, "op must be MORPH_DILATE or MORPH_ERODE");
     // First, count the number of non-empty structuring elements,
     // so we know whether to start on res or resBuffer
     size_t nonEmptyStrels = std::count_if(lines.begin(), lines.end(), nonEmptyLineSeg);
@@ -288,6 +291,7 @@ template <MorphOp op, class Ty>
 inline void flatLinearDilateErode(HostView<Ty> res, HostView<const Ty> vol, const std::vector<LineSeg>& lines,
     int3 blockSize = make_int3(512,128,128))
 {
+    static_assert(op == MORPH_DILATE || op == MORPH_ERODE, "op must be MORPH_DILATE or MORPH_ERODE");
     int3 minBuffer = minRSBufferSize(lines);
     int3 borderSize = blockSize >= vol.size() ? make_int3(0, 0, 0) : minBuffer; // Only use border if needed
     int bufSize = static_cast<int>(minTotalBufferSize(minBuffer, blockSize + 2 * borderSize));
@@ -324,6 +328,7 @@ template <MorphOp op, class Ty>
 inline void flatLinearDilateErode(HostView<Ty> res, HostView<const Ty> vol, const LineSeg line,
     int3 blockSize = make_int3(512,128,128))
 {
+    static_assert(op == MORPH_DILATE || op == MORPH_ERODE, "op must be MORPH_DILATE or MORPH_ERODE");
     std::vector<LineSeg> lines{ line };
     flatLinearDilateErode<op>(res, vol, lines, blockSize);
 }
