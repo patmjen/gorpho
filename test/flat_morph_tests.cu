@@ -408,8 +408,7 @@ TYPED_TEST(FlatOpenCloseTest, HostInputSingleBlock)
     ASSERT_NO_THROW(strel = makeHostVolume<bool>(strelSize));
 
     std::srand(7); // Lucky number seven...
-    std::generate(vol.data(), vol.data() + vol.numel(), []() {
-        return static_cast<Type>(100.0 * static_cast<double>(std::rand()) / RAND_MAX); });
+    randomFill<Type>(vol);
     std::memcpy(strel.data(), strelData, strel.numel() * sizeof(bool));
 
     auto initTest = [&](MorphOp op)

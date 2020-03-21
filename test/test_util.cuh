@@ -2,6 +2,7 @@
 #define TEST_UTIL_CUH__
 
 #include <cuda_runtime.h>
+#include <algorithm>
 
 #include "view.cuh"
 
@@ -94,6 +95,13 @@ void printVol(Stream& stream, gpho::detail::ViewBase<Ty> vol)
         }
     }
     stream << "]\n";
+}
+
+template <class Ty>
+void randomFill(gpho::HostView<Ty> vw)
+{
+    std::generate(vw.data(), vw.data() + vw.numel(), []() {
+        return static_cast<Ty>(100.0 * static_cast<double>(std::rand()) / RAND_MAX); });
 }
 
 #define EXPECT_VOL_EQ(expected, actual) \
