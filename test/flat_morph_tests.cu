@@ -1,7 +1,7 @@
 #include <cuda_runtime.h>
 #include <stdexcept>
 #include <cinttypes>
-#include <cstdlib>
+#include <cstring>
 
 #include "gtest/gtest.h"
 #include "helper_math.cuh"
