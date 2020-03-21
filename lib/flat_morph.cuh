@@ -139,6 +139,118 @@ void flatErode(HostView<Ty> res, HostView<const Ty> vol, HostView<const bool> st
     flatDilateErode<MORPH_ERODE>(res, vol, strel, blockSize);
 }
 
+template <MorphOp op, class Ty>
+void flatOpenClose(DeviceView<Ty> res, DeviceView<Ty> resBuffer, DeviceView<const Ty> vol, 
+    DeviceView<const bool> strel, cudaStream_t stream = 0)
+{
+    static_assert(op == MORPH_OPEN || op == MORPH_CLOSE, "op must be MORPH_OPEN or MORPH_CLOSE");
+    constexpr MorphOp op1 = op == MORPH_OPEN ? MORPH_ERODE : MORPH_DILATE;
+    constexpr MorphOp op2 = op == MORPH_OPEN ? MORPH_DILATE : MORPH_ERODE;
+    flatDilateErode<op1>(res, vol, strel, stream);
+    // We use a copy here, since resBuffer might point to the same data as vol.
+    // Also, this copy is takes very little time, so the overhead is negligible.
+    cudaMemcpyAsync(resBuffer.data(), res.data(), res.numel() * sizeof(Ty), cudaMemcpyDeviceToDevice, stream);
+    flatDilateErode<op2, Ty>(res, resBuffer, strel, stream);
+}
+
+template <MorphOp op, class Ty>
+void flatOpenClose(DeviceView<Ty> res, DeviceView<Ty> vol, DeviceView<const bool> strel,
+    cudaStream_t stream = 0)
+{
+    static_assert(op == MORPH_OPEN || op == MORPH_CLOSE, "op must be MORPH_OPEN or MORPH_CLOSE");
+    flatOpenClose<op, Ty>(res, vol, vol, strel, stream);
+}
+
+template <MorphOp op, class Ty>
+void flatOpenClose(HostView<Ty> res, HostView<const Ty> vol, DeviceView<const bool> strel,
+    int3 blockSize = make_int3(256, 256, 256))
+{
+    static_assert(op == MORPH_OPEN || op == MORPH_CLOSE, "op must be MORPH_OPEN or MORPH_CLOSE");
+    auto processBlock = [&](auto block, auto stream, auto volVec, auto resVec, void* buf)
+    {
+        const int3 size = block.blockSizeBorder();
+        DeviceView<Ty> volBlk(volVec[0], size);
+        DeviceView<Ty> resBlk(resVec[0], size);
+        // Since the vol block will be overwritten next iteration, we use it as the result buffer.
+        flatOpenClose<op, Ty>(resBlk, volBlk, strel, stream);
+    };
+
+    const int3 borderSize = 2 * (strel.size() / 2); // Need double border as we do two operations
+    cbp::BlockIndexIterator blockIter(vol.size(), blockSize, borderSize);
+    cbp::CbpResult bpres = cbp::blockProc(processBlock, vol.data(), res.data(), blockIter);
+    ensureCudaSuccess(cudaDeviceSynchronize());
+    if (bpres != cbp::CBP_SUCCESS) {
+        // TODO: Better error message
+        throw std::runtime_error("Error during block processing");
+    }
+}
+
+template <MorphOp op, class Ty>
+void flatOpenClose(HostView<Ty> res, HostView<const Ty> vol, HostView<const bool> strel,
+    int3 blockSize = make_int3(256, 256, 256))
+{
+    static_assert(op == MORPH_OPEN || op == MORPH_CLOSE, "op must be MORPH_OPEN or MORPH_CLOSE");
+    DeviceVolume<bool> dstrel = makeDeviceVolume<bool>(strel.size());
+    transfer(dstrel.view(), strel);
+    flatOpenClose<op>(res, vol, dstrel.constView(), blockSize);
+}
+
+template <class Ty>
+void flatOpen(DeviceView<Ty> res, DeviceView<Ty> resBuffer, DeviceView<const Ty> vol,
+    DeviceView<const bool> strel, cudaStream_t stream = 0)
+{
+    flatOpenClose<MORPH_OPEN>(res, resBuffer, vol, strel, stream);
+}
+
+template <class Ty>
+void flatOpen(DeviceView<Ty> res, DeviceView<Ty> vol, DeviceView<const bool> strel,
+    cudaStream_t stream = 0)
+{
+    flatOpenClose<MORPH_OPEN>(res, vol, strel, stream);
+}
+
+template <class Ty>
+void flatOpen(HostView<Ty> res, HostView<const Ty> vol, DeviceView<const bool> strel,
+    int3 blockSize = make_int3(256, 256, 256))
+{
+    flatOpenClose<MORPH_OPEN>(res, vol, strel, blockSize);
+}
+
+template <class Ty>
+void flatOpen(HostView<Ty> res, HostView<const Ty> vol, HostView<const bool> strel,
+    int3 blockSize = make_int3(256, 256, 256))
+{
+    flatOpenClose<MORPH_OPEN>(res, vol, strel, blockSize);
+}
+
+template <class Ty>
+void flatClose(DeviceView<Ty> res, DeviceView<Ty> resBuffer, DeviceView<const Ty> vol,
+    DeviceView<const bool> strel, cudaStream_t stream = 0)
+{
+    flatOpenClose<MORPH_CLOSE>(res, resBuffer, vol, strel, stream);
+}
+
+template <class Ty>
+void flatClose(DeviceView<Ty> res, DeviceView<Ty> vol, DeviceView<const bool> strel,
+    cudaStream_t stream = 0)
+{
+    flatOpenClose<MORPH_CLOSE>(res, vol, strel, stream);
+}
+
+template <class Ty>
+void flatClose(HostView<Ty> res, HostView<const Ty> vol, DeviceView<const bool> strel,
+    int3 blockSize = make_int3(256, 256, 256))
+{
+    flatOpenClose<MORPH_CLOSE>(res, vol, strel, blockSize);
+}
+
+template <class Ty>
+void flatClose(HostView<Ty> res, HostView<const Ty> vol, HostView<const bool> strel,
+    int3 blockSize = make_int3(256, 256, 256))
+{
+    flatOpenClose<MORPH_CLOSE>(res, vol, strel, blockSize);
+}
+
 } // namespace gpho
 
 #endif // FLAT_MORPH_CUH__
