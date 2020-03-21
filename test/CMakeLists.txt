@@ -21,11 +21,11 @@ if (gorpho_download_googletest)
 	# settings on Windows
 	set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-# Add googletest directly to our build. This defines
-# the gtest and gtest_main targets.
-add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
-                 ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
-                 EXCLUDE_FROM_ALL)
+	# Add googletest directly to our build. This defines
+	# the gtest and gtest_main targets.
+	add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
+					 ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
+					 EXCLUDE_FROM_ALL)
 endif ()
 
 add_executable (tests volume_tests.cu view_tests.cu general_morph_tests.cu flat_morph_tests.cu flat_linear_morph_tests.cu strel_tests.cu util_tests.cu)
