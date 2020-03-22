@@ -9,7 +9,9 @@ enum MorphOp {
     MORPH_DILATE,
     MORPH_ERODE,
     MORPH_OPEN,
-    MORPH_CLOSE
+    MORPH_CLOSE,
+    MORPH_TOPHAT,
+    MORPH_BOTHAT
 };
 
 enum AxisDir : int {
