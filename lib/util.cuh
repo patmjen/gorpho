@@ -4,6 +4,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <cstdint>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <math_constants.h>
@@ -29,9 +30,10 @@ inline Ty zeroOrOne(bool b)
 }
 
 __host__ __device__
-inline int prod(const int3 a)
+inline int64_t prod(const int3 a)
 {
-    return a.x * a.y * a.z;
+    int64_t ax = a.x, ay = a.y, az = a.z;
+    return ax * ay * az;
 }
 
 __host__ __device__
