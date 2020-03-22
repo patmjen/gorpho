@@ -70,7 +70,7 @@ public:
     }
 
     __host__ __device__
-    int numel() const noexcept
+    size_t numel() const noexcept
     {
         return prod(size_);
     }
