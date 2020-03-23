@@ -10,6 +10,7 @@
 
 #include "volume.cuh"
 #include "morph.cuh"
+#include "misc.cuh"
 
 namespace gpho {
 
@@ -249,6 +250,98 @@ void flatClose(HostView<Ty> res, HostView<const Ty> vol, HostView<const bool> st
     int3 blockSize = make_int3(256, 256, 256))
 {
     flatOpenClose<MORPH_CLOSE>(res, vol, strel, blockSize);
+}
+
+template <class Ty>
+void flatTophat(DeviceView<Ty> res, DeviceView<Ty> resBuffer, DeviceView<const Ty> vol,
+    DeviceView<const bool> strel, cudaStream_t stream = 0)
+{
+    flatOpen(res, resBuffer, vol, strel, stream);
+    elemWiseOp<MATH_SUB, Ty>(res, vol, res, stream);
+}
+
+template <class Ty>
+void flatBothat(DeviceView<Ty> res, DeviceView<Ty> resBuffer, DeviceView<const Ty> vol,
+    DeviceView<const bool> strel, cudaStream_t stream = 0)
+{
+    flatClose(res, resBuffer, vol, strel, stream);
+    elemWiseOp<MATH_SUB, Ty>(res, res, vol, stream);
+}
+
+template <MorphOp op, class Ty>
+void flatTophatBothat(DeviceView<Ty> res, DeviceView<Ty> resBuffer, DeviceView<const Ty> vol,
+    DeviceView<const bool> strel, cudaStream_t stream = 0)
+{
+    static_assert(op == MORPH_TOPHAT || op == MORPH_BOTHAT, "op must be MORPH_TOPHAT or MORPH_BOTHAT");
+    if (op == MORPH_TOPHAT) {
+        flatTophat(res, resBuffer, vol, strel, stream);
+    } else {
+        flatBothat(res, resBuffer, vol, strel, stream);
+    }
+}
+
+template <MorphOp op, class Ty>
+void flatTophatBothat(HostView<Ty> res, HostView<const Ty> vol, DeviceView<const bool> strel,
+    int3 blockSize = make_int3(256, 256, 256))
+{
+    static_assert(op == MORPH_TOPHAT || op == MORPH_BOTHAT, "op must be MORPH_TOPHAT or MORPH_BOTHAT");
+    auto processBlock = [&](auto block, auto stream, auto volVec, auto resVec, void* buf)
+    {
+        const int3 size = block.blockSizeBorder();
+        DeviceView<Ty> volBlk(volVec[0], size);
+        DeviceView<Ty> resBlk(resVec[0], size);
+        DeviceView<Ty> resBufBlk(static_cast<Ty *>(buf), size);
+        // Since the vol block will be overwritten next iteration, we use it as the result buffer.
+        flatTophatBothat<op, Ty>(resBlk, resBufBlk, volBlk, strel, stream);
+    };
+
+    const int3 borderSize = 2 * (strel.size() / 2); // Need double border as we do two operations
+    size_t tmpSize = prod(blockSize + 2 * borderSize) * sizeof(Ty); // Need an extra block as result buffer
+    cbp::BlockIndexIterator blockIter(vol.size(), blockSize, borderSize);
+    cbp::CbpResult bpres = cbp::blockProc(processBlock, vol.data(), res.data(), blockIter, tmpSize);
+    ensureCudaSuccess(cudaDeviceSynchronize());
+    if (bpres != cbp::CBP_SUCCESS) {
+        // TODO: Better error message
+        throw std::runtime_error("Error during block processing");
+    }
+}
+
+template <MorphOp op, class Ty>
+void flatTophatBothat(HostView<Ty> res, HostView<const Ty> vol, HostView<const bool> strel,
+    int3 blockSize = make_int3(256, 256, 256))
+{
+    static_assert(op == MORPH_TOPHAT || op == MORPH_BOTHAT, "op must be MORPH_TOPHAT or MORPH_BOTHAT");
+    DeviceVolume<bool> dstrel = makeDeviceVolume<bool>(strel.size());
+    transfer(dstrel.view(), strel);
+    flatTophatBothat<op>(res, vol, dstrel.constView(), blockSize);
+}
+
+template <class Ty>
+void flatTophat(HostView<Ty> res, HostView<const Ty> vol, DeviceView<const bool> strel,
+    int3 blockSize = make_int3(256, 256, 256))
+{
+    flatTophatBothat<MORPH_TOPHAT>(res, vol, strel, blockSize);
+}
+
+template <class Ty>
+void flatBothat(HostView<Ty> res, HostView<const Ty> vol, DeviceView<const bool> strel,
+    int3 blockSize = make_int3(256, 256, 256))
+{
+    flatTophatBothat<MORPH_BOTHAT>(res, vol, strel, blockSize);
+}
+
+template <class Ty>
+void flatTophat(HostView<Ty> res, HostView<const Ty> vol, HostView<const bool> strel,
+    int3 blockSize = make_int3(256, 256, 256))
+{
+    flatTophatBothat<MORPH_TOPHAT>(res, vol, strel, blockSize);
+}
+
+template <class Ty>
+void flatBothat(HostView<Ty> res, HostView<const Ty> vol, HostView<const bool> strel,
+    int3 blockSize = make_int3(256, 256, 256))
+{
+    flatTophatBothat<MORPH_BOTHAT>(res, vol, strel, blockSize);
 }
 
 } // namespace gpho
