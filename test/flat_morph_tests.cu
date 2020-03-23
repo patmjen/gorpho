@@ -511,3 +511,96 @@ TYPED_TEST(FlatOpenCloseTest, HostInputMultipleBlocks)
         EXPECT_VOL_EQ(expectedRes.view(), res.view());
     }
 }
+
+// NOTE: For opening and closing we only test that tophat(x) = x - open(x) and vice versa for bothat.
+template <class Ty>
+class FlatTophatBothatTest : public CudaTest {
+public:
+    using Type = Ty;
+};
+
+TYPED_TEST_SUITE(FlatTophatBothatTest, AllPodTypes);
+
+template <MorphOp op, class Ty>
+void computeExpectedTophatBothatRes(const HostVolume<Ty>& vol, const HostVolume<bool>& strel,
+    HostVolume<Ty>& expectedRes)
+{
+    static_assert(op == MORPH_TOPHAT || op == MORPH_BOTHAT, "op must be MORPH_TOPHAT or MORPH_BOTHAT");
+    if (op == MORPH_TOPHAT) {
+        computeExpectedOpenCloseRes<MORPH_OPEN, Ty>(vol, strel, expectedRes);
+        std::transform(vol.data(), vol.data() + vol.numel(), expectedRes.data(), expectedRes.data(),
+            [](auto v, auto r) { return v - r; });
+    } else {
+        computeExpectedOpenCloseRes<MORPH_CLOSE, Ty>(vol, strel, expectedRes);
+        std::transform(vol.data(), vol.data() + vol.numel(), expectedRes.data(), expectedRes.data(),
+            [](auto v, auto r) { return r - v; });
+    }
+}
+
+TYPED_TEST(FlatTophatBothatTest, HostInputMultipleBlocks)
+{
+    // TODO: This test is very large and should probably be spread into smaller pieces.
+    using Type = typename TestFixture::Type;
+
+    const int3 volSize = make_int3(5, 5, 5);
+    const int3 strelSize = make_int3(3, 3, 3);
+
+    bool strelData[] = {
+        false, false, false,
+        false, true, false,
+        false, false, false,
+
+        false, true, false,
+        true, true, true,
+        false, true, false,
+
+        false, false, false,
+        false, true, false,
+        false, false, false
+    };
+
+    HostVolume<Type> vol, res, expectedRes;
+    HostVolume<bool> strel;
+    ASSERT_NO_THROW(vol = makeHostVolume<Type>(volSize));
+    ASSERT_NO_THROW(res = makeHostVolume<Type>(volSize));
+    ASSERT_NO_THROW(strel = makeHostVolume<bool>(strelSize));
+
+    std::srand(7); // Lucky number seven...
+    std::generate(vol.data(), vol.data() + vol.numel(), []() {
+        return static_cast<Type>(100.0 * static_cast<double>(std::rand()) / RAND_MAX); });
+    std::memcpy(strel.data(), strelData, strel.numel() * sizeof(bool));
+
+    auto initTest = [&](MorphOp op)
+    {
+        // This always resets dresBuffer even though it might not be needed. However, the overhead
+        // is negligible so the code clarity is worth it.
+        ASSERT_NO_THROW(std::memset(res.data(), 0, res.numel() * sizeof(Type)));
+        if (op == MORPH_TOPHAT) {
+            computeExpectedTophatBothatRes<MORPH_TOPHAT, Type>(vol, strel, expectedRes);
+        }
+        else {
+            computeExpectedTophatBothatRes<MORPH_BOTHAT, Type>(vol, strel, expectedRes);
+        }
+    };
+
+    {
+        SCOPED_TRACE("Top hat");
+
+        ASSERT_NO_FATAL_FAILURE(initTest(MORPH_TOPHAT));
+
+        flatTophat<Type>(res, vol, strel, volSize / 2);
+        this->syncAndAssertCudaSuccess();
+
+        EXPECT_VOL_EQ(expectedRes.view(), res.view());
+    }
+    {
+        SCOPED_TRACE("Bot hat");
+
+        ASSERT_NO_FATAL_FAILURE(initTest(MORPH_BOTHAT));
+
+        flatBothat<Type>(res, vol, strel, volSize / 2);
+        this->syncAndAssertCudaSuccess();
+
+        EXPECT_VOL_EQ(expectedRes.view(), res.view());
+    }
+}
