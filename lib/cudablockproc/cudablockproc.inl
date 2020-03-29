@@ -209,13 +209,15 @@ inline CbpResult blockProcMultipleNoValidate(Func func, const InArr& inVols, con
         auto crntStream = *streamIter;
         auto crntBlockIdx = *blockIter;
 
-        cudaEventRecord(crntEvent);
+        cudaEventRecord(crntEvent, prevStream);
         func(prevBlockIdx, prevStream, d_inBlocks, d_outBlocks, d_tmpMem);
 
         cudaStreamWaitEvent(crntStream, crntEvent, 0);
         cbp::blockVolumeTransferAll<VOL_TO_BLOCK>(inVols, inBlocks, crntBlockIdx, volSize, crntStream);
-        cbp::hostDeviceTransferAll(d_inBlocks, inBlocks, crntBlockIdx, cudaMemcpyHostToDevice, crntStream);
+        cudaEventRecord(crntEvent, prevStream);
         cbp::hostDeviceTransferAll(outBlocks, d_outBlocks, prevBlockIdx, cudaMemcpyDeviceToHost, prevStream);
+        cudaStreamWaitEvent(crntStream, crntEvent, 0);
+        cbp::hostDeviceTransferAll(d_inBlocks, inBlocks, crntBlockIdx, cudaMemcpyHostToDevice, crntStream);
         cbp::blockVolumeTransferAll<BLOCK_TO_VOL>(outVols, outBlocks, prevBlockIdx, volSize, prevStream);
 
         prevBlockIdx = crntBlockIdx;
